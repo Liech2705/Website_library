@@ -20,7 +20,11 @@ class DatabaseSeeder extends Seeder
             AuthorSeeder::class,
             BookSeeder::class,
             BookAuthorSeeder::class,
-        
+            BookCopySeeder::class,
+            BorrowRecordSeeder::class,
+            ReservationSeeder::class,
+            UserSeeder::class,
+            NotificationSeeder::class,
             // ... các seeder khác
         ]);
     }

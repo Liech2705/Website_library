@@ -1,173 +1,184 @@
-import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState } from "react";
+import "./style.css";
 
-export default function Profile() {
-  const navigate = useNavigate();
-  const [editing, setEditing] = useState(false);
+export default function ProfilePage() {
   const [user, setUser] = useState({
-    id: "",
-    name: "",
-    email: "",
-    phone: "",
-    school_name: "",
-    address: "",
+    name: "Admin",
+    email: "admin@student.edu.com",
+    phone: "0899804328",
+    address: "Bình Yên, Nam Thanh, Nam Trực",
+    school_name: "Trường Đại học Công nghệ",
+    role: "admin",
+    status: "active", // hoặc 'locked'
+    avatar:
+      "https://yt3.ggpht.com/yti/ANjgQV-FgWf4XF8YlaoUDJNhBbH7KQ8nK9jSlWtuRle6_trGSaY=s88-c-k-c0x00ffffff-no-rj-mo",
     password: "",
     newPassword: "",
+    confirmPassword: "",
   });
-  const [avatar, setAvatar] = useState("");
+
   const [errors, setErrors] = useState({});
-  const [success, setSuccess] = useState("");
-
-  useEffect(() => {
-    const isLoggedIn = localStorage.getItem("isLoggedIn");
-    const username = localStorage.getItem("username");
-
-    if (!isLoggedIn || !username) {
-      alert("Vui lòng đăng nhập để xem hoặc chỉnh sửa thông tin cá nhân");
-      navigate("/login");
-      return;
-    }
-
-    // Giả lập dữ liệu lấy từ backend (theo sơ đồ UML)
-    const mockData = {
-      admin1: {
-        id: 1,
-        name: "Nguyễn Văn A",
-        email: "admin@edu.vn",
-        phone: "0987654321",
-        school_name: "Đại học CNTT",
-        address: "TP.HCM",
-        password: "admin1",
-      },
-    };
-
-    const account = mockData[username];
-    if (account) {
-      setUser({ ...account, newPassword: "" });
-      setAvatar(localStorage.getItem("avatar") || "");
-    }
-  }, [navigate]);
 
   const handleChange = (e) => {
     setUser({ ...user, [e.target.name]: e.target.value });
   };
 
-  const handleAvatarChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        setAvatar(reader.result);
-        localStorage.setItem("avatar", reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const validate = () => {
+  const validateInfo = () => {
     const errs = {};
-    if (!user.name) errs.name = "Vui lòng nhập tên";
-    if (!user.email) errs.email = "Vui lòng nhập email";
-    else if (!/^[\w.-]+@[\w.-]+\.edu\.vn$/.test(user.email))
-      errs.email = "Email phải đúng định dạng .edu.vn";
-    if (user.newPassword && user.newPassword.length < 6)
-      errs.newPassword = "Mật khẩu mới phải ít nhất 6 ký tự";
+    if (!user.name.trim()) errs.name = "Vui lòng nhập họ tên";
+    if (!user.phone.trim()) errs.phone = "Vui lòng nhập số điện thoại";
+    if (!user.address.trim()) errs.address = "Vui lòng nhập địa chỉ";
+    if (!user.school_name.trim()) errs.school_name = "Vui lòng nhập trường học";
     return errs;
   };
 
-  const handleSave = (e) => {
-    e.preventDefault();
-    const errs = validate();
-    if (Object.keys(errs).length > 0) return setErrors(errs);
+  const validatePassword = () => {
+    const errs = {};
+    if (!user.password) errs.password = "Vui lòng nhập mật khẩu hiện tại";
+    if (!user.newPassword) errs.newPassword = "Vui lòng nhập mật khẩu mới";
+    else if (user.newPassword.length < 6)
+      errs.newPassword = "Mật khẩu phải có ít nhất 6 ký tự";
+    if (user.newPassword !== user.confirmPassword)
+      errs.confirmPassword = "Xác nhận mật khẩu không trùng khớp";
+    return errs;
+  };
 
-    // Kiểm tra mật khẩu hiện tại
-    if (user.newPassword && user.password !== "admin1") {
-      setErrors({ password: "Mật khẩu hiện tại không đúng." });
-      return;
+  const handleSaveInfo = () => {
+    const errs = validateInfo();
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs);
+    } else {
+      alert("✅ Cập nhật thông tin thành công!");
+      setErrors({});
     }
+  };
 
-    setErrors({});
-    setSuccess("Cập nhật thông tin thành công!");
-    setEditing(false);
+  const handleUpdatePassword = () => {
+    const errs = validatePassword();
+    if (Object.keys(errs).length > 0) {
+      setErrors(errs);
+    } else {
+      alert("✅ Cập nhật mật khẩu thành công!");
+      setErrors({});
+    }
   };
 
   return (
-    <div className="container py-4">
-      <div className="card p-4 shadow" style={{ maxWidth: "600px", margin: "auto" }}>
-        <h3 className="text-center text-danger mb-4">Thông tin cá nhân</h3>
+    <div className="container-fluid bg-light min-vh-100 py-5">
+      <div className="container">
+        <h3 className="mb-4 fw-bold text-center">Trang cá nhân</h3>
+        <div className="row">
+          <div className="col-md-10 col-lg-8 mx-auto">
+            <div className="card p-4 shadow-sm mb-4">
+              <h5 className="mb-3 fw-bold">Thông tin tài khoản</h5>
 
-        <div className="text-center mb-3">
-          <img
-            src={avatar || "https://p16-sign-useast2a.tiktokcdn.com/tos-useast2a-avt-0068-giso/5862ce92aa8685e51ffb44249e495c36~tplv-tiktokx-cropcenter:1080:1080.jpeg?dr=14579&refresh_token=c40cfff5&x-expires=1751346000&x-signature=cF%2F3NKQBJnlOizU2ImghngGVRs0%3D&t=4d5b0474&ps=13740610&shp=a5d48078&shcp=81f88b70&idc=my"}
-            alt="avatar"
-            className="rounded-circle"
-            style={{ width: "120px", height: "120px", objectFit: "cover" }}
-          />
-          {editing && (
-            <div className="mt-2">
-              <input type="file" accept="image/*" onChange={handleAvatarChange} />
-            </div>
-          )}
-        </div>
+              <div className="row">
+                {/* Avatar */}
+                <div className="col-md-3 text-center">
+                  <img
+                    src={user.avatar}
+                    alt="avatar"
+                    className="rounded border mb-2"
+                    style={{
+                      width: "100%",
+                      maxWidth: "150px",
+                      height: "150px",
+                      objectFit: "cover",
+                    }}
+                  />
+                  <label className="btn btn-light btn-sm border">
+                    📤 Thay ảnh đại diện
+                    <input
+                      type="file"
+                      accept="image/*"
+                      hidden
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onload = () =>
+                            setUser({ ...user, avatar: reader.result });
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
 
-        {success && <div className="alert alert-success">{success}</div>}
-
-        {!editing ? (
-          <>
-            <p><strong>Tên:</strong> {user.name}</p>
-            <p><strong>Email:</strong> {user.email}</p>
-            <p><strong>Điện thoại:</strong> {user.phone}</p>
-            <p><strong>Trường:</strong> {user.school_name}</p>
-            <p><strong>Địa chỉ:</strong> {user.address}</p>
-            <button className="btn btn-outline-danger" onClick={() => setEditing(true)}>
-              Cập nhật thông tin cá nhân
-            </button>
-          </>
-        ) : (
-          <form onSubmit={handleSave}>
-            {["name", "email", "phone", "school_name", "address"].map((field) => (
-              <div className="mb-3" key={field}>
-                <label className="form-label">{field.replace("_", " ")}</label>
-                <input
-                  className={`form-control ${errors[field] ? "is-invalid" : ""}`}
-                  name={field}
-                  value={user[field]}
-                  onChange={handleChange}
-                />
-                {errors[field] && <div className="invalid-feedback">{errors[field]}</div>}
+                {/* Info fields */}
+                <div className="col-md-9">
+                  <div className="row g-3">
+                    <div className="col-md-6">
+                      <label className="form-label">Họ và tên *</label>
+                      <input
+                        className={`form-control ${errors.name ? "is-invalid" : ""}`}
+                        name="name"
+                        value={user.name}
+                        onChange={handleChange}
+                      />
+                      {errors.name && <div className="invalid-feedback">{errors.name}</div>}
+                    </div>
+                    <div className="col-md-6">
+                      <label className="form-label">Email</label>
+                      <input className="form-control" value={user.email} disabled />
+                    </div>
+                    <div className="col-md-6">
+                      <label className="form-label">Số điện thoại *</label>
+                      <input
+                        className={`form-control ${errors.phone ? "is-invalid" : ""}`}
+                        name="phone"
+                        value={user.phone}
+                        onChange={handleChange}
+                      />
+                      {errors.phone && <div className="invalid-feedback">{errors.phone}</div>}
+                    </div>
+                    <div className="col-md-6">
+                      <label className="form-label">Địa chỉ *</label>
+                      <input
+                        className={`form-control ${errors.address ? "is-invalid" : ""}`}
+                        name="address"
+                        value={user.address}
+                        onChange={handleChange}
+                      />
+                      {errors.address && (
+                        <div className="invalid-feedback">{errors.address}</div>
+                      )}
+                    </div>
+                    <div className="col-md-6">
+                      <label className="form-label">Trường học *</label>
+                      <input
+                        className={`form-control ${errors.school_name ? "is-invalid" : ""}`}
+                        name="school_name"
+                        value={user.school_name}
+                        onChange={handleChange}
+                      />
+                      {errors.school_name && (
+                        <div className="invalid-feedback">{errors.school_name}</div>
+                      )}
+                    </div>
+                    <div className="col-md-3">
+                      <label className="form-label">Vai trò</label>
+                      <input className="form-control" value={user.role} disabled />
+                    </div>
+                    <div className="col-md-3">
+                      <label className="form-label">Trạng thái</label>
+                      <input
+                        className="form-control"
+                        value={user.status === "active" ? "Hoạt động" : "Bị khóa"}
+                        disabled
+                      />
+                    </div>
+                    <div className="col-12">
+                      <button className="btn btn-primary mt-3" onClick={handleSaveInfo}>
+                        💾 Lưu thông tin
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
-            ))}
-
-            <div className="mb-3">
-              <label>Mật khẩu hiện tại</label>
-              <input
-                type="password"
-                name="password"
-                className={`form-control ${errors.password ? "is-invalid" : ""}`}
-                value={user.password}
-                onChange={handleChange}
-              />
-              {errors.password && <div className="invalid-feedback">{errors.password}</div>}
             </div>
-
-            <div className="mb-3">
-              <label>Mật khẩu mới</label>
-              <input
-                type="password"
-                name="newPassword"
-                className={`form-control ${errors.newPassword ? "is-invalid" : ""}`}
-                value={user.newPassword}
-                onChange={handleChange}
-              />
-              {errors.newPassword && <div className="invalid-feedback">{errors.newPassword}</div>}
-            </div>
-
-            <div className="d-flex justify-content-between">
-              <button className="btn btn-danger" type="submit">Lưu</button>
-              <button className="btn btn-secondary" type="button" onClick={() => setEditing(false)}>Hủy</button>
-            </div>
-          </form>
-        )}
+          </div>
+        </div>
       </div>
     </div>
   );

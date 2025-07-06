@@ -1,0 +1,9 @@
+{
+  "name": "website_library",
+  "scripts": {
+    "start": "concurrently \"cd backend && php artisan serve\" \"cd fontend && npm start\""
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.0"
+  }
+}

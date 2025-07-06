@@ -1,20 +1,21 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import ApiService from "../services/api";
 
 export default function RegisterForm() {
   const navigate = useNavigate();
   const [form, setForm] = useState({
-    name: "", email: "", password: "", confirmPassword: "",
-    phone: "", school_name: "", address: ""
+    name: "", email: "", password: "", confirmPassword: "", phone: ""
   });
   const [errors, setErrors] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
 
   const validateEmail = (email) =>
     /^[\w-.]+@[\w-]+\.(edu\.vn)$/.test(email);
 
   const validateForm = () => {
     const errs = {};
-    const { name, email, password, confirmPassword, phone, school_name, address } = form;
+    const { name, email, password, confirmPassword, phone } = form;
 
     if (!name.trim()) errs.name = "Vui lòng nhập tên đăng nhập.";
     else if (name.length < 6) errs.name = "Tên đăng nhập không được nhỏ hơn 6 ký tự.";
@@ -29,12 +30,6 @@ export default function RegisterForm() {
     else if (password !== confirmPassword) errs.confirmPassword = "Mật khẩu xác nhận không trùng khớp.";
 
     if (!phone.trim()) errs.phone = "Vui lòng nhập số điện thoại.";
-    if (!school_name.trim()) errs.school_name = "Vui lòng nhập tên trường.";
-    if (!address.trim()) errs.address = "Vui lòng nhập địa chỉ.";
-
-    const existingUsers = JSON.parse(localStorage.getItem("users")) || [];
-    if (existingUsers.some(u => u.name === name)) errs.name = "Tên đăng nhập đã tồn tại.";
-    if (existingUsers.some(u => u.email === email)) errs.email = "Email đã được sử dụng.";
 
     return errs;
   };
@@ -43,7 +38,7 @@ export default function RegisterForm() {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  const handleRegister = (e) => {
+  const handleRegister = async (e) => {
     e.preventDefault();
     const errs = validateForm();
     if (Object.keys(errs).length) {
@@ -51,17 +46,34 @@ export default function RegisterForm() {
       return;
     }
 
-    const { name, email, password, phone, school_name, address } = form;
-    const newUser = {
-      name, email, password, phone, school_name, address,
-      status: "active", role: "reader"
-    };
+    setIsLoading(true);
+    setErrors({});
 
-    const users = JSON.parse(localStorage.getItem("users")) || [];
-    users.push(newUser);
-    localStorage.setItem("users", JSON.stringify(users));
-    alert("Đăng ký thành công!");
-    navigate("/login");
+    try {
+      console.log('Attempting registration...');
+      // Register using API service
+      await ApiService.register(form.name, form.email, form.password);
+
+      alert("Đăng ký thành công!");
+      navigate("/login");
+    } catch (error) {
+      console.error('Register error:', error);
+
+      // Handle validation errors from backend
+      if (error.message.includes('{')) {
+        try {
+          const backendErrors = JSON.parse(error.message);
+          setErrors(backendErrors);
+          return;
+        } catch (parseError) {
+          console.error('Error parsing backend errors:', parseError);
+        }
+      }
+
+      setErrors({ general: error.message || 'Đăng ký thất bại. Vui lòng thử lại.' });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -77,17 +89,15 @@ export default function RegisterForm() {
           </div>
 
           <p className="text-center text-muted">Điền đầy đủ thông tin bên dưới</p>
+          {errors.general && <div className="alert alert-danger">{errors.general}</div>}
 
           <form onSubmit={handleRegister} noValidate>
             {[
               { name: "name", type: "text", placeholder: "Tên đăng nhập" },
               { name: "phone", type: "text", placeholder: "Số điện thoại" },
-              { name: "school_name", type: "text", placeholder: "Tên trường" },
-              { name: "address", type: "text", placeholder: "Địa chỉ" },
               { name: "email", type: "email", placeholder: "Email .edu.vn" },
               { name: "password", type: "password", placeholder: "Mật khẩu" },
               { name: "confirmPassword", type: "password", placeholder: "Xác nhận mật khẩu" }
-              
             ].map(({ name, type, placeholder }) => (
               <div className="mb-3" key={name}>
                 <input
@@ -109,7 +119,13 @@ export default function RegisterForm() {
               </label>
             </div>
 
-            <button type="submit" className="btn btn-danger w-100">Đăng ký</button>
+            <button
+              type="submit"
+              className="btn btn-danger w-100"
+              disabled={isLoading}
+            >
+              {isLoading ? 'Đang đăng ký...' : 'Đăng ký'}
+            </button>
             <p className="text-center mt-3">
               Đã có tài khoản? <Link to="/login" className="text-decoration-none">Đăng nhập</Link>
             </p>

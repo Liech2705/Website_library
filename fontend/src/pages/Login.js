@@ -1,16 +1,15 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import ApiService from "../services/api";
 
 export default function LoginForm() {
   const navigate = useNavigate();
-  const [user, setUser] = useState({ username: "", email: "", password: "" });
+  const [user, setUser] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
 
-   const validate = () => {
+  const validate = () => {
     const errs = {};
-    if (!user.username) errs.username = "Vui lòng nhập tên đăng nhập";
-    else if (user.username.length < 6) errs.username = "Tên đăng nhập phải từ 6 ký tự";
-
     if (!user.email) errs.email = "Vui lòng nhập email";
     else if (!/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.edu\.vn$/.test(user.email))
       errs.email = "Email phải có đuôi edu.vn";
@@ -21,24 +20,47 @@ export default function LoginForm() {
     return errs;
   };
 
-  const login = (e) => {
+  const login = async (e) => {
     e.preventDefault();
     const errs = validate();
     if (Object.keys(errs).length > 0) return setErrors(errs);
 
-    const account = {
-      admin: { email: "admin@edu.vn", password: "admin", role: "librarian" },
-      user: { email: "user1234@edu.vn", password: "user1234", role: "student" },
-    };
+    setIsLoading(true);
+    setErrors({});
 
-    const match = account[user.username];
-    if (match && match.email === user.email && match.password === user.password) {
-      localStorage.setItem("isLoggedIn", "true");
-      localStorage.setItem("role", match.role);
+    try {
+      console.log('Attempting login with:', { email: user.email });
+
+      // Login using API service
+      const loginData = await ApiService.login(user.email, user.password);
+
+      // Store token
+      localStorage.setItem('access_token', loginData.access_token);
+      localStorage.setItem('token_type', loginData.token_type);
+      localStorage.setItem('isLoggedIn', 'true');
+
+      // Lưu thông tin user từ response
+      if (loginData.user) {
+        localStorage.setItem('user_id', loginData.user.id);
+        localStorage.setItem('username', loginData.user.name);
+        localStorage.setItem('role', loginData.user.role || 'reader');
+        localStorage.setItem('email', loginData.user.email);
+
+        console.log('Login successful, user role:', loginData.user.role);
+      } else {
+        // Fallback nếu không có thông tin user
+        localStorage.setItem('email', user.email);
+        localStorage.setItem('role', 'reader');
+        localStorage.setItem('username', user.email.split('@')[0]);
+      }
+
       window.dispatchEvent(new Event("storage"));
       navigate("/");
-    } else {
-      setErrors({ general: "Thông tin đăng nhập không đúng." });
+    } catch (error) {
+      console.error('Login error:', error);
+      setErrors({ general: error.message || 'Đăng nhập thất bại. Vui lòng thử lại.' });
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -58,35 +80,51 @@ export default function LoginForm() {
           {errors.general && <div className="alert alert-danger">{errors.general}</div>}
 
           <form onSubmit={login}>
-            {["username", "email", "password"].map((field, i) => (
-              <div className="mb-3" key={i}>
+            {[
+              { name: "email", type: "email", placeholder: "Email .edu.vn" },
+              { name: "password", type: "password", placeholder: "Mật khẩu" }
+            ].map(({ name, type, placeholder }) => (
+              <div className="mb-3" key={name}>
                 <input
-                  type={field === "password" ? "password" : "text"}
-                  className={`form-control ${errors[field] ? "is-invalid" : ""}`}
-                  placeholder={field === "username" ? "Tên đăng nhập" : field === "email" ? "Email" : "Mật khẩu"}
-                  value={user[field]}
-                  onChange={(e) => setUser({ ...user, [field]: e.target.value })}
+                  type={type}
+                  className={`form-control ${errors[name] ? "is-invalid" : ""}`}
+                  placeholder={placeholder}
+                  value={user[name]}
+                  onChange={(e) => setUser({ ...user, [name]: e.target.value })}
                 />
-                {errors[field] && <div className="invalid-feedback">{errors[field]}</div>}
+                {errors[name] && <div className="invalid-feedback">{errors[name]}</div>}
               </div>
             ))}
 
             <div className="d-flex justify-content-between align-items-center mb-3">
               <div className="form-check">
-                <input className="form-check-input" type="checkbox" id="agree" required />
+                <input className="form-check-input" type="checkbox" id="agree" />
                 <label className="form-check-label" htmlFor="agree">Ghi nhớ tài khoản</label>
               </div>
-
               <Link to="/forgot-password" className="text-decoration-none text-danger">
                 Quên mật khẩu?
               </Link>
             </div>
 
-           <div className="d-flex gap-2">
-            <button type="submit" className="btn btn-danger w-50">Đăng nhập</button>
-            <Link to="/register" className="btn btn-outline-danger w-50">Đăng ký</Link>
-          </div>
+            <div className="d-flex gap-2">
+              <button
+                type="submit"
+                className="btn btn-danger w-50"
+                disabled={isLoading}
+              >
+                {isLoading ? 'Đang đăng nhập...' : 'Đăng nhập'}
+              </button>
+              <Link to="/register" className="btn btn-outline-danger w-50">Đăng ký</Link>
+            </div>
 
+            {/* Test accounts info */}
+            <div className="mt-3 p-3 bg-light rounded">
+              <small className="text-muted">
+                <strong>Test Accounts:</strong><br />
+                Admin: hoailinh@student.ctuet.edu.vn / HoaiLinh12345<br />
+                User: user@student.ctuet.edu.vn / User12345
+              </small>
+            </div>
           </form>
         </div>
 

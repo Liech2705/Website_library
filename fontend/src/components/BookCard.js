@@ -1,45 +1,125 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
+import ToastMessage from "./ToastMessage";
+import notificationSound from "../assets/thongbao.wav";
+import ApiService from "../services/api";
+import "./style.css";
 
 export default function BookCard({ book }) {
-  const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+  const isLoggedIn = ApiService.isAuthenticated();
+  const currentUser = ApiService.getCurrentUser();
+  const userId = currentUser?.id;
 
-  // Theo UML: book.authors: Author[], book.category: Category, book.book_copies: BookCopy[]
-  const authors = book.authors?.map(author => author.name).join(", ") || "Không rõ";
-  const category = book.category?.name || "Chưa phân loại";
-  const isAvailable = Array.isArray(book.book_copies) && book.book_copies.length > 0;
+  const [toast, setToast] = useState({
+    show: false,
+    message: "",
+    variant: "info",
+  });
 
-  const handleBorrow = (e) => {
+  // Tính toán thông tin sách
+  const authors = book.authors?.map((a) => a.name).join(", ") || "Không rõ";
+  const publisher = book.publisher || "Không rõ";
+  const borrowCount = book.borrowCount || 0;
+
+  // 👉 Sửa logic: status !== 0 là còn sách
+  const availableCopies = Array.isArray(book.book_copies)
+    ? book.book_copies.filter((copy) => Number(copy.status) !== 0)
+    : [];
+  const isAvailable = availableCopies.length > 0;
+  const availableCopy = availableCopies[0];
+
+  const handleBorrow = async (e) => {
     e.preventDefault();
-    alert(isLoggedIn ? "✅ Yêu cầu mượn sách đã được gửi đến thủ thư!" : "❗ Bạn phải đăng nhập để mượn sách.");
+
+    if (!isLoggedIn || !userId) {
+      setToast({
+        show: true,
+        message: "❗ Bạn phải đăng nhập để mượn sách.",
+        variant: "warning",
+      });
+      new Audio(notificationSound).play().catch(() => { });
+      return;
+    }
+
+    if (!isAvailable || !availableCopy?.id) {
+      setToast({
+        show: true,
+        message: "❌ Không còn bản sao sách khả dụng.",
+        variant: "danger",
+      });
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/borrow-records', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
+        },
+        body: JSON.stringify({
+          user_id: userId,
+          book_copy_id: availableCopy.id,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Mượn sách thất bại');
+      }
+
+      setToast({
+        show: true,
+        message: "✅ Yêu cầu mượn sách đã được gửi!",
+        variant: "success",
+      });
+      new Audio(notificationSound).play().catch(() => { });
+    } catch (error) {
+      console.error("Lỗi mượn sách:", error);
+      setToast({
+        show: true,
+        message: "❌ Mượn sách thất bại. Vui lòng thử lại.",
+        variant: "danger",
+      });
+    }
   };
 
   return (
-    <Link to={`/book/${book.id}`} className="text-decoration-none text-dark">
-      <div className="card h-100 shadow-sm border-0 rounded-4 overflow-hidden book-card">
-        {/* Hình ảnh sách */}
-        <div className="position-relative" style={{ height: "220px", overflow: "hidden" }}>
-          <img
-            src={book.image}
-            alt={book.title}
-            className="w-100 h-100 object-fit-cover"
-          />
-        </div>
+    <>
+      <ToastMessage
+        show={toast.show}
+        message={toast.message}
+        variant={toast.variant}
+        onClose={() => setToast({ ...toast, show: false })}
+      />
 
-        {/* Nội dung */}
-        <div className="card-body d-flex flex-column bg-light-subtle">
-          <h5 className="card-title fw-semibold text-primary-emphasis">{book.title}</h5>
-          <ul className="list-unstyled small text-secondary mb-3">
-            <li><strong>Mã sách:</strong> {book.id}</li>
-            <li><strong>Tác giả:</strong> {authors}</li>
-            <li><strong>Thể loại:</strong> {category}</li>
-            <li><strong>NXB:</strong> {book.publisher || "Không rõ"}</li>
-            <li><strong>Năm:</strong> {book.year || "?"}</li>
-          </ul>
+      <Link to={`/book/${book.id}`} className="text-decoration-none text-dark">
+        <div className="card h-100 shadow-sm border-0 rounded-4 overflow-hidden book-card hover-shadow">
+          {/* Ảnh bìa */}
+          <div className="book-img-wrapper">
+            <img
+              src={book.image || "https://via.placeholder.com/150x220?text=No+Image"}
+              alt={book.title}
+              className="book-img"
+            />
+          </div>
 
-          <div className="mt-auto d-flex justify-content-between align-items-center">
-            <button className="btn btn-sm btn-outline-success rounded-pill px-3">Xem thêm</button>
+          {/* Nội dung */}
+          <div className="card-body bg-white d-flex flex-column">
+            <h6 className="fw-semibold text-dark mb-2 text-truncate">{book.title}</h6>
+            <div className="small text-muted mb-1 text-truncate">
+              <i className="bi bi-person-fill me-1"></i>{authors}
+            </div>
+            <div className="small text-muted mb-1 text-truncate">
+              <i className="bi bi-building me-1"></i>{publisher}
+            </div>
+            <div className="small text-muted mb-3">
+              <i className="bi bi-journal-check me-1"></i>{borrowCount} lượt mượn
+            </div>
+
             <button
-              className={`btn btn-sm rounded-pill px-3 ${isAvailable ? "btn-success" : "btn-outline-secondary"}`}
+              className={`btn btn-sm rounded-pill px-3 mt-auto ${isAvailable ? "btn-success" : "btn-outline-secondary"
+                }`}
               onClick={isAvailable ? handleBorrow : undefined}
               disabled={!isAvailable}
             >
@@ -47,7 +127,7 @@ export default function BookCard({ book }) {
             </button>
           </div>
         </div>
-      </div>
-    </Link>
+      </Link>
+    </>
   );
 }

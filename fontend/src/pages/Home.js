@@ -1,11 +1,46 @@
-import React from "react";
-import BookList from "../components/BookList";
+import React, { useEffect, useState } from "react";
+import BookCard from "../components/BookCard";
+import ApiService from "../services/api"
 import "bootstrap/dist/css/bootstrap.min.css";
 
 export default function Home() {
+  const [books, setBooks] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Gọi API khi component được mount
+  useEffect(() => {
+    const fetchBooks = async () => {
+      try {
+        const booksData = await ApiService.getBooks();
+        setBooks(booksData); // Không cần .data vì ApiService đã trả về data trực tiếp
+      } catch (error) {
+        console.error("Lỗi khi tải sách:", error);
+        setBooks([]); // Set empty array nếu có lỗi
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBooks();
+  }, []);
+
+  // Lọc sách hay (dựa theo lượt mượn cao nhất)
+  const topBooks = [...books]
+    .filter((b) => b.borrowCount != null)
+    .sort((a, b) => b.borrowCount - a.borrowCount)
+    .slice(0, 8);
+
+  // Lọc sách mới nhất
+  const newBooks = [...books]
+    .filter((b) => b.year)
+    .sort((a, b) => b.year - a.year)
+    .slice(-8)
+    .reverse();
+
   return (
     <div className="min-vh-100 bg-light">
       <main className="container py-4">
+        {/* Carousel */}
         <div className="row justify-content-center mb-5">
           <div className="col-md-10">
             <div
@@ -45,31 +80,61 @@ export default function Home() {
                   </div>
                 ))}
               </div>
-
-              <button
-                className="carousel-control-prev"
-                type="button"
-                data-bs-target="#bookCarousel"
-                data-bs-slide="prev"
-              >
-                <span className="carousel-control-prev-icon" aria-hidden="true" />
+              <button className="carousel-control-prev" type="button" data-bs-target="#bookCarousel" data-bs-slide="prev">
+                <span className="carousel-control-prev-icon" />
                 <span className="visually-hidden">Previous</span>
               </button>
-              <button
-                className="carousel-control-next"
-                type="button"
-                data-bs-target="#bookCarousel"
-                data-bs-slide="next"
-              >
-                <span className="carousel-control-next-icon" aria-hidden="true" />
+              <button className="carousel-control-next" type="button" data-bs-target="#bookCarousel" data-bs-slide="next">
+                <span className="carousel-control-next-icon" />
                 <span className="visually-hidden">Next</span>
               </button>
             </div>
           </div>
         </div>
 
-        <h2 className="text-center mb-4">📚 Danh Mục Sách</h2>
-        <BookList />
+        {/* Loading */}
+        {loading && (
+          <div className="text-center py-5">
+            <div className="spinner-border text-primary" role="status"></div>
+            <p className="mt-3 text-muted">Đang tải sách...</p>
+          </div>
+        )}
+
+        {!loading && (
+          <>
+            {/* 📈 Sách hay nên đọc */}
+            <section className="mb-5">
+              <h3 className="mb-3 text-primary">📈 Sách Hay Nên Đọc</h3>
+              {topBooks.length > 0 ? (
+                <div className="row row-cols-1 row-cols-sm-2 row-cols-md-4 g-4">
+                  {topBooks.map((book) => (
+                    <div className="col" key={book.id}>
+                      <BookCard book={book} />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted">Chưa có dữ liệu sách hay.</p>
+              )}
+            </section>
+
+            {/* 🆕 Sách mới */}
+            <section className="mb-5">
+              <h3 className="mb-3 text-success">🆕 Sách Mới</h3>
+              {newBooks.length > 0 ? (
+                <div className="row row-cols-1 row-cols-sm-2 row-cols-md-4 g-4">
+                  {newBooks.map((book) => (
+                    <div className="col" key={book.id}>
+                      <BookCard book={book} />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-muted">Chưa có dữ liệu sách mới.</p>
+              )}
+            </section>
+          </>
+        )}
       </main>
     </div>
   );

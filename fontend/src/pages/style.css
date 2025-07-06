@@ -1,0 +1,21 @@
+.card {
+  border-radius: 12px;
+}
+.btn-primary {
+  background-color: #2563eb;
+  border: none;
+}
+.btn-primary:hover {
+  background-color: #1e40af;
+}
+
+/* lịch sử mượn trả  */
+.react-datepicker__day.has-book-day {
+  background-color: gold !important;
+  color: black !important;
+  border-radius: 50% !important;
+}
+
+
+/*   */
+

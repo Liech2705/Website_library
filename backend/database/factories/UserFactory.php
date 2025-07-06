@@ -24,6 +24,12 @@ class UserFactory extends Factory
     public function definition(): array
     {
         return [
+            'name' => $this->faker->name(),
+            'email' => $this->faker->unique()->safeEmail(),
+            'password' => bcrypt('password'), // default password
+            'role' => 'user',
+            'status' => 'active',
+            'lock_until' => null,
         ];
     }
 
@@ -32,7 +38,6 @@ class UserFactory extends Factory
      */
     public function unverified(): static
     {
-        return $this->state(fn (array $attributes) => [
-        ]);
+        return $this->state(fn(array $attributes) => []);
     }
 }

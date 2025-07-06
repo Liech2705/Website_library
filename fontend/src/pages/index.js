@@ -7,8 +7,9 @@ export { default as Login } from "./Login";
 export { default as Register } from "./Register";
 export { default as ForgotPassword } from "./ForgotPassword";
 export { default as ChangePassword } from "./ChangePassword";
-export { default as Profile } from "./Profile";
+
 
 export { default as BorrowHistory } from "./BorrowHistory";
+export { default as Profile } from "./Profile";
 
 export { default as AdminDashboard } from "./AdminDashboard";

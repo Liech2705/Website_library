@@ -12,21 +12,47 @@ use App\Http\Controllers\UserController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\BorrowRecordController;
 use App\Http\Controllers\BookCopyController;
+use App\Http\Controllers\AuthController;
+use App\Http\Controllers\UserInforController;
+use App\Http\Controllers\AdminActivityController;
 
-// Route::get('/user', function (Request $request) {
-//     return $request->user();
-// })->middleware('auth:sanctum');
 
-Route::get('test', function () {
-    return ['message' => 'API OK'];
+Route::middleware('auth:sanctum')->group(function () {
+    // Các resource không cần admin cho index/show
+    Route::apiResource('users', UserController::class)->only(['index', 'show']);
+    Route::apiResource('user-infors', UserInforController::class)->only(['index', 'show']);
+    Route::apiResource('books', BookController::class)->only(['index', 'show']);
+    Route::apiResource('authors', AuthorController::class)->only(['index', 'show']);
+    Route::apiResource('categories', CategoryController::class)->only(['index', 'show']);
+    Route::apiResource('book-copies', BookCopyController::class)->only(['index', 'show']);
+    Route::apiResource('book-authors', BookAuthorController::class)->only(['index', 'show']);
+    Route::apiResource('borrow-records', BorrowRecordController::class)->only(['index', 'show']);
+    Route::apiResource('notifications', NotificationController::class)->only(['index', 'show']);
+    Route::apiResource('reservation', ReservationController::class)->only(['index', 'show']);
+
+    // Các thao tác thêm/sửa/xóa chỉ cho admin
+    Route::middleware('adminonly')->group(function () {
+        Route::apiResource('users', UserController::class)->only(['store', 'update', 'destroy']);
+        Route::apiResource('user-infors', UserInforController::class)->only(['store', 'update', 'destroy']);
+        Route::apiResource('books', BookController::class)->only(['store', 'update', 'destroy']);
+        Route::apiResource('authors', AuthorController::class)->only(['store', 'update', 'destroy']);
+        Route::apiResource('categories', CategoryController::class)->only(['store', 'update', 'destroy']);
+        Route::apiResource('book-copies', BookCopyController::class)->only(['store', 'update', 'destroy']);
+        Route::apiResource('book-authors', BookAuthorController::class)->only(['store', 'update', 'destroy']);
+        Route::apiResource('borrow-records', BorrowRecordController::class)->only(['store', 'update', 'destroy']);
+        Route::apiResource('notifications', NotificationController::class)->only(['store', 'update', 'destroy']);
+        Route::apiResource('reservation', ReservationController::class)->only(['store', 'update', 'destroy']);
+
+        // Routes cho admin activities
+        Route::get('/admin-activities', [AdminActivityController::class, 'index']);
+        Route::get('/admin-activities/{adminId}', [AdminActivityController::class, 'show']);
+        Route::delete('/admin-activities/{id}', [AdminActivityController::class, 'destroy']);
+    });
+    Route::post('/logout', [AuthController::class, 'logout']);
 });
-Route::get('/books_', [BookController::class, '_index']);
-Route::apiResource('reservations', ReservationController::class);
-Route::apiResource('authors', AuthorController::class);
-Route::apiResource('book-authors', BookAuthorController::class);
-Route::apiResource('books', BookController::class);
-Route::apiResource('categories', CategoryController::class);
-Route::apiResource('users', UserController::class);
-Route::apiResource('notifications', NotificationController::class);
-Route::apiResource('borrow-records', BorrowRecordController::class);
-Route::apiResource('book-copies', BookCopyController::class);
+
+// Routes không cần authentication - không có middleware
+Route::get('/reviews_books', [BookController::class, '_index']);
+Route::get('/reviews_books/{id}', [BookController::class, 'show']);
+Route::post('/login', [AuthController::class, 'login']);
+Route::post('/register', [AuthController::class, 'register']);

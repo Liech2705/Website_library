@@ -21,6 +21,7 @@ class CategorySeeder extends Seeder
             ['name' => 'Kỹ năng sống', 'description' => 'Sách kỹ năng sống'],
             ['name' => 'Giáo trình', 'description' => 'Sách giáo trình'],
             ['name' => 'Lịch sử', 'description' => 'Sách lịch sử'],
+            ['name' => 'Khoa học', 'description' => 'Sách khoa học'],
         ];
         foreach ($categories as $cat) {
             Category::create($cat);

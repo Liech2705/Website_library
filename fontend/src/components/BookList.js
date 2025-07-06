@@ -1,8 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import BookCard from "../components/BookCard";
-import books from "../data/books";
+import ApiService from "../services/api";
 
 export default function BookList() {
+  const [books, setBooks] = useState([]);
+  const [loading, setLoading] = useState(true);
+
   const [filters, setFilters] = useState({
     keyword: "",
     category: "Tất cả",
@@ -13,29 +16,60 @@ export default function BookList() {
   const [currentPage, setCurrentPage] = useState(1);
   const booksPerPage = 8;
 
-  // Tạo danh sách thể loại duy nhất
+  useEffect(() => {
+    const fetchBooks = async () => {
+      try {
+        const booksData = await ApiService.getBooks();
+        if (booksData && Array.isArray(booksData)) {
+          setBooks(booksData);
+        } else {
+          console.error("Dữ liệu không hợp lệ:", booksData);
+          setBooks([]);
+        }
+      } catch (error) {
+        console.error("Lỗi tải sách:", error);
+        setBooks([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBooks();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="container py-5 text-center">
+        <div className="spinner-border text-primary" role="status"></div>
+        <p className="mt-3">Đang tải danh sách sách...</p>
+      </div>
+    );
+  }
+
   const categories = [
+    "Tất cả",
     ...new Set(
       books.map((b) =>
-        typeof b.category === "string"
-          ? b.category
-          : b.category?.name || "Chưa phân loại"
+        typeof b.category === "object" && b.category?.name
+          ? b.category.name
+          : typeof b.category === "string"
+            ? b.category
+            : "Chưa phân loại"
       )
     ),
   ];
 
-  // Hàm lọc theo nhiều tiêu chí
   const filtered = books.filter((book) => {
     const keyword = filters.keyword.toLowerCase();
     const title = book.title?.toLowerCase() || "";
     const authorNames =
-      book.authors?.map((a) => a.name.toLowerCase()).join(", ") ||
-      book.author?.toLowerCase() ||
-      "";
+      book.authors?.map((a) => a.name.toLowerCase()).join(", ") || "";
     const category =
-      typeof book.category === "string"
-        ? book.category
-        : book.category?.name || "Chưa phân loại";
+      typeof book.category === "object" && book.category?.name
+        ? book.category.name
+        : typeof book.category === "string"
+          ? book.category
+          : "Chưa phân loại";
     const publisher = book.publisher?.toLowerCase() || "";
     const year = String(book.year || "");
 
@@ -48,30 +82,27 @@ export default function BookList() {
     );
   });
 
-  // Phân trang
-  const totalPages = Math.ceil(filtered.length / booksPerPage);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / booksPerPage));
   const paginated = filtered.slice(
     (currentPage - 1) * booksPerPage,
     currentPage * booksPerPage
   );
 
-  // JSX
   return (
     <div className="container py-4">
-      {/* Bộ lọc */}
       <form className="row g-2 mb-4">
-        {/* <div className="col-md-3">
+        <div className="col-md-2">
           <input
             type="text"
             className="form-control"
-            placeholder="Tìm theo tên sách..."
+            placeholder="Từ khóa"
             value={filters.keyword}
             onChange={(e) => {
               setFilters({ ...filters, keyword: e.target.value });
               setCurrentPage(1);
             }}
           />
-        </div> */}
+        </div>
         <div className="col-md-2">
           <select
             className="form-select"
@@ -81,11 +112,8 @@ export default function BookList() {
               setCurrentPage(1);
             }}
           >
-            <option value="Tất cả">Tất cả thể loại</option>
             {categories.map((c, i) => (
-              <option key={i} value={c}>
-                {c}
-              </option>
+              <option key={i} value={c}>{c}</option>
             ))}
           </select>
         </div>
@@ -127,7 +155,6 @@ export default function BookList() {
         </div>
       </form>
 
-      {/* Danh sách sách */}
       {paginated.length > 0 ? (
         <>
           <div className="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
@@ -138,7 +165,6 @@ export default function BookList() {
             ))}
           </div>
 
-          {/* Phân trang */}
           <div className="d-flex justify-content-center mt-4">
             <ul className="pagination">
               <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
@@ -162,11 +188,7 @@ export default function BookList() {
                   </button>
                 </li>
               ))}
-              <li
-                className={`page-item ${
-                  currentPage === totalPages ? "disabled" : ""
-                }`}
-              >
+              <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
                 <button
                   className="page-link"
                   onClick={() => setCurrentPage(currentPage + 1)}

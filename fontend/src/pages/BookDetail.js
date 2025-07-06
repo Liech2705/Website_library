@@ -1,9 +1,70 @@
-import { useParams, Link } from "react-router-dom";
-import books from "../data/books";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import { useEffect, useState } from "react";
+import ApiService from "../services/api";
+import ToastMessage from "../components/ToastMessage";
 
 export default function BookDetail() {
   const { id } = useParams();
-  const book = books.find(b => b.id.toString() === id);
+  const navigate = useNavigate();
+  const [book, setBook] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState({
+    show: false,
+    message: "",
+    variant: "info",
+  });
+
+  useEffect(() => {
+    const fetchBook = async () => {
+      try {
+        const bookData = await ApiService.getBookById(id);
+        setBook(bookData);
+      } catch (error) {
+        console.error("Lỗi khi tải sách:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBook();
+  }, [id]);
+
+  const isLoggedIn = ApiService.isAuthenticated();
+
+  const availableCopies = book?.book_copies?.filter(copy =>
+    copy.status !== 0 && copy.status !== "0"
+  ) || [];
+  const availableCount = availableCopies.length;
+  const isAvailable = availableCount > 0;
+
+  const authors = book?.authors?.map(a => a.name).join(", ") || "Không rõ";
+  const category = book?.category?.name || "Chưa phân loại";
+
+  const showToast = (message, variant = "info") => {
+    setToast({ show: true, message, variant });
+  };
+
+  const handleAction = (type) => {
+    if (!isLoggedIn) {
+      showToast(`❗ Bạn phải đăng nhập để ${type === "borrow" ? "mượn" : "đặt trước"} sách.`, "danger");
+      return;
+    }
+
+    const current = localStorage.getItem("currentBorrowedBook");
+    if (current && current !== book.id.toString()) {
+      showToast("❗ Bạn chỉ được mượn hoặc đặt trước 1 cuốn sách tại một thời điểm.", "warning");
+      return;
+    }
+
+    localStorage.setItem("currentBorrowedBook", book.id.toString());
+    showToast(type === "borrow"
+      ? "✅ Đã gửi yêu cầu mượn sách!"
+      : "📬 Đã gửi yêu cầu đặt sách!", "success");
+  };
+
+  if (loading) {
+    return <div className="container py-5 text-center">⏳ Đang tải sách...</div>;
+  }
 
   if (!book) {
     return (
@@ -14,35 +75,22 @@ export default function BookDetail() {
     );
   }
 
-  const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
-  const isAvailable = book.book_copies?.length > 0;
-  const authors = book.authors?.map(a => a.name).join(", ") || "Không rõ";
-  const category = book.category?.name || "Chưa phân loại";
-
-  const handleAction = (type) => {
-    if (!isLoggedIn) {
-      alert(`❗ Bạn phải đăng nhập để ${type === "borrow" ? "mượn" : "đặt trước"} sách.`);
-      return;
-    }
-
-    const current = localStorage.getItem("currentBorrowedBook");
-    if (current && current !== book.id.toString()) {
-      alert("❗ Bạn chỉ được mượn hoặc đặt trước 1 cuốn sách tại một thời điểm.");
-      return;
-    }
-
-    localStorage.setItem("currentBorrowedBook", book.id.toString());
-    alert(type === "borrow"
-      ? "✅ Đã gửi yêu cầu mượn sách!"
-      : "📬 Đã gửi yêu cầu đặt sách!");
-  };
-
   return (
-    <div className="container py-5">
-      {/* Hình ảnh và thông tin chính */}
+    <div className="container py-5 position-relative">
+      <ToastMessage
+        show={toast.show}
+        message={toast.message}
+        variant={toast.variant}
+        onClose={() => setToast({ ...toast, show: false })}
+      />
+
       <div className="row align-items-center">
         <div className="col-md-4 mb-4">
-          <img src={book.image} alt={book.title} className="img-fluid rounded shadow" />
+          <img
+            src={book.image_url || "https://via.placeholder.com/300x400?text=No+Image"}
+            alt={book.title}
+            className="img-fluid rounded shadow"
+          />
         </div>
 
         <div className="col-md-8">
@@ -54,10 +102,9 @@ export default function BookDetail() {
             <li><strong>NXB:</strong> {book.publisher || "?"}</li>
             <li><strong>Năm:</strong> {book.year || "?"}</li>
             <li><strong>Lượt xem:</strong> {book.views || 0}</li>
-            <li><strong>Số lượng còn:</strong> {book.book_copies?.length || 0}</li>
+            <li><strong>Số lượng còn:</strong> {availableCount}</li>
           </ul>
 
-          {/* Nút mượn hoặc đặt trước */}
           <div className="mt-4">
             {isAvailable ? (
               <>
@@ -82,7 +129,6 @@ export default function BookDetail() {
         </div>
       </div>
 
-      {/* Phần giới thiệu */}
       <div className="mt-5 pt-4 border-top">
         <h5 className="text-muted mb-3">Giới Thiệu Sách</h5>
         <h6 className="text-danger">{book.title?.toUpperCase()}</h6>
@@ -91,7 +137,6 @@ export default function BookDetail() {
         </p>
       </div>
 
-      {/* Nút quay lại */}
       <div className="mt-4">
         <Link to="/" className="btn btn-outline-dark">← Quay lại danh sách</Link>
       </div>
