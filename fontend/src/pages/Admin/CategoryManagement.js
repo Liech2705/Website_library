@@ -1,31 +1,14 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Table, Button, Modal, Form, Toast } from "react-bootstrap";
 import { PencilFill, TrashFill, InfoCircleFill } from "react-bootstrap-icons";
 import AdminSidebarLayout from "../../components/AdminSidebar";
 import Pagination from "../../components/Pagination";
 import BookTabs from "../../components/BookTabs";
 import "../style.css";
-
-const mockCategories = [
-  {
-    id: 1,
-    name: "Văn học",
-    description: "Bao gồm truyện ngắn, tiểu thuyết, thơ...",
-  },
-  {
-    id: 2,
-    name: "Khoa học",
-    description: "Sách về vật lý, hóa học, sinh học, công nghệ...",
-  },
-  {
-    id: 3,
-    name: "Tâm lý học",
-    description: "Sách về hành vi, cảm xúc và tư duy con người.",
-  },
-];
+import ApiServiceAdmin from "../../services/admin/api";
 
 export default function CategoryManagement() {
-  const [categories, setCategories] = useState(mockCategories);
+  const [categories, setCategories] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [showModal, setShowModal] = useState(false);
@@ -34,6 +17,18 @@ export default function CategoryManagement() {
   const [newCategory, setNewCategory] = useState({ name: "", description: "" });
   const [deletingCategoryId, setDeletingCategoryId] = useState(null);
   const itemsPerPage = 10;
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await ApiServiceAdmin.getCategories();
+        setCategories(res);
+      } catch (error) {
+        console.error("Lỗi khi tải thể loại:", error);
+      }
+    };
+    fetchCategories();
+  }, []);
 
   const filteredCategories = categories.filter((cat) =>
     cat.name.toLowerCase().includes(searchTerm.toLowerCase())

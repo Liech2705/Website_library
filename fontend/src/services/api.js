@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://127.0.0.1:8000/api';
+const API_BASE_URL = process.env.REACT_APP_API_URL;
 
 // Helper function to get auth headers
 const getAuthHeaders = () => {
@@ -115,6 +115,7 @@ class ApiService {
                 localStorage.removeItem('username');
                 localStorage.removeItem('role');
                 localStorage.removeItem('email');
+                localStorage.removeItem("isLoggedIn");
             }
             return response.data;
         } catch (error) {
@@ -122,24 +123,6 @@ class ApiService {
         }
     }
 
-    // User methods
-    static async getUsers() {
-        try {
-            const response = await axios.get(`${API_BASE_URL}/users`);
-            return handleResponse(response);
-        } catch (error) {
-            handleError(error);
-        }
-    }
-
-    static async getUserById(id) {
-        try {
-            const response = await axios.get(`${API_BASE_URL}/users/${id}`);
-            return handleResponse(response);
-        } catch (error) {
-            handleError(error);
-        }
-    }
 
     // Book methods
     static async getBooks() {
@@ -236,6 +219,19 @@ class ApiService {
                     'Content-Type': 'multipart/form-data',
                 },
             });
+            return handleResponse(response);
+        } catch (error) {
+            handleError(error);
+        }
+    }
+
+    static async changePassword(oldPassword, newPassword) {
+        try {
+            const response = await axios.post(
+                `${API_BASE_URL}/change-password`,
+                { oldPassword, newPassword },
+                { headers: getAuthHeaders() }
+            );
             return handleResponse(response);
         } catch (error) {
             handleError(error);

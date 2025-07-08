@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
+import ApiService from "../services/api";
 import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import "bootstrap-icons/font/bootstrap-icons.css";
@@ -12,12 +13,24 @@ export default function Header() {
   const [suggestions, setSuggestions] = useState([]);
   const [auth, setAuth] = useState({ isLoggedIn: false, role: "" });
   const [showNotifications, setShowNotifications] = useState(false);
+  const [notifications, setNotifications] = useState([])
   const notiRef = useRef();
 
-  const notifications = [
-    { id: 1, type: "success", message: "✅ Sách 'Clean Code' đã được duyệt." },
-    { id: 2, type: "warning", message: "⏰ Sách 'Lập trình C' sắp đến hạn trả vào 04/07/2025." },
-  ];
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      const userId = localStorage.getItem("user_id")
+      try {
+        const res = await ApiService.getNotificationsByUser(userId);
+        setNotifications(res);
+      } catch (error) {
+        console.error("Lỗi khi tải sách:", error);
+      } finally {
+        //
+      }
+    };
+
+    fetchNotifications();
+  }, []);
 
   useEffect(() => {
     const updateStatus = () => {

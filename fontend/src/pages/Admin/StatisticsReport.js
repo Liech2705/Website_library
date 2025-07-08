@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button, Table } from "react-bootstrap";
 import {
   BarChart,
@@ -11,54 +11,30 @@ import {
 } from "recharts";
 import AdminSidebarLayout from "../../components/AdminSidebar";
 import Pagination from "../../components/Pagination";
+import ApiServiceAdmin from "../../services/admin/api";
 import "../style.css";
 
-// Dữ liệu mẫu
-const allBooks = [
-  {
-    id: 1,
-    title: "Cây Cam Ngọt",
-    author: "Tô Hoài",
-    quantity: 6,
-    monthlyData: { 6: 45, 7: 10, 10: 2 },
-  },
-  {
-    id: 2,
-    title: "Lược Sử Loài Người",
-    author: "Harari",
-    quantity: 20,
-    monthlyData: { 6: 20, 7: 15 },
-  },
-  {
-    id: 3,
-    title: "Mắt Biếc",
-    author: "Nguyễn Nhật Ánh",
-    quantity: 5,
-    monthlyData: { 6: 8, 10: 1 },
-  },
-  {
-    id: 4,
-    title: "Dế Mèn Phiêu Lưu Ký",
-    author: "Tô Hoài",
-    quantity: 15,
-    monthlyData: { 6: 1 },
-  },
-  {
-    id: 5,
-    title: "Bí Mật Của Hoa Vàng",
-    author: "Osho",
-    quantity: 8,
-    monthlyData: { 6: 30, 7: 5 },
-  },
-];
-
 export default function ReportPage() {
+  const [allBooks, setAllBooks] = useState([]);
   const [activeTab, setActiveTab] = useState("popular");
   const [fromMonth, setFromMonth] = useState(1);
   const [toMonth, setToMonth] = useState(10);
   const [filteredChartData, setFilteredChartData] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
   const booksPerPage = 10;
+
+  // Fetch dữ liệu từ API khi mount
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const res = await ApiServiceAdmin.getBookStatistics();
+        setAllBooks(res);
+      } catch (error) {
+        console.error("Lỗi khi tải thống kê sách:", error);
+      }
+    };
+    fetchData();
+  }, []);
 
   const handleStatistic = () => {
     const newData = [];
@@ -156,7 +132,7 @@ export default function ReportPage() {
                 <tr key={b.id}>
                   <td>{b.id}</td>
                   <td>{b.title}</td>
-                  <td>{b.author}</td>
+                  <td>{b.authors}</td>
                   <td>{b.quantity}</td>
                   <td>{totalBorrowed}</td>
                 </tr>

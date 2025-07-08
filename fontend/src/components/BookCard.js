@@ -6,8 +6,9 @@ import axios from "axios";
 import "./style.css";
 
 export default function BookCard({ book }) {
-  const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
-  const userId = isLoggedIn ? localStorage.getItem("userId") : null;
+  const isLoggedIn = localStorage.getItem("isLoggedIn") === 'true';
+  console.log(isLoggedIn)
+  const userId = isLoggedIn ? localStorage.getItem("user_id") : null;
 
   const [toast, setToast] = useState({
     show: false,

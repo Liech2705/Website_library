@@ -15,6 +15,7 @@ use App\Http\Controllers\BookCopyController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserInforController;
 use App\Http\Controllers\AdminActivityController;
+use App\Http\Controllers\DashboardController;
 
 
 
@@ -34,10 +35,11 @@ Route::middleware('auth:sanctum')->group(function () {
     // Các api custom ở ngoài
     Route::get('/borrow-history/{userId}', [BorrowRecordController::class, 'history']);
     Route::get('/notifications/user/{userId}', [NotificationController::class, 'getByUser']);
-    Route::post('/users/avatar', [UserController::class, 'updateAvatar']);
+    Route::post('/users/avatar', [UserInforController::class, 'updateAvatar']);
     Route::post('/update-infor', [UserInforController::class, 'updateProfile']);
     Route::get('/user-infor/me', [UserInforController::class, 'getMyInfor']);
     Route::get('/user-infor/{userId}', [UserInforController::class, 'getInforByUserId']);
+    Route::post('/change-password', [UserController::class, 'changePassword']);
 
     // Các thao tác thêm/sửa/xóa chỉ cho admin
     Route::middleware('adminonly')->group(function () {
@@ -56,6 +58,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/admin-activities', [AdminActivityController::class, 'index']);
         Route::get('/admin-activities/{adminId}', [AdminActivityController::class, 'show']);
         Route::delete('/admin-activities/{id}', [AdminActivityController::class, 'destroy']);
+
+        //Routes costum
+        Route::get('/dashboard/summary', [DashboardController::class, 'summary']);
+        Route::get('/dashboard/new-books', [DashboardController::class, 'newBooks']);
+        Route::get('/dashboard/new-readers', [DashboardController::class, 'newReaders']);
+        Route::get('/statistics/books', [BookController::class, 'statistics']);
     });
     Route::post('/logout', [AuthController::class, 'logout']);
 });
@@ -65,3 +73,5 @@ Route::get('/reviews_books', [BookController::class, '_index']);
 Route::get('/reviews_books/{id}', [BookController::class, 'show']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [AuthController::class, 'register']);
+
+

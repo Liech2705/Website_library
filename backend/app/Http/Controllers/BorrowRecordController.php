@@ -10,7 +10,26 @@ class BorrowRecordController extends Controller
 {
     public function index()
     {
-        return BorrowRecord::all();
+        // Lấy tất cả borrow records cùng với user (độc giả) và bookCopy.book (sách)
+        $records = BorrowRecord::with([
+            'user', // người mượn
+            'bookCopy.book', // bản sao sách và sách
+        ])->get();
+
+        $result = $records->map(function($r) {
+            return [
+                'id' => $r->id,
+                'reader' => $r->user ? $r->user->name : '—',
+                'bookTitle' => $r->bookCopy && $r->bookCopy->book ? $r->bookCopy->book->title : '—',
+                'quantity' => 1, // mỗi phiếu là 1 bản copy, nếu có quantity thì lấy $r->quantity
+                'borrowDate' => $r->start_time,
+                'dueDate' => $r->due_time,
+                'note' => $r->note,
+                'returned' => $r->is_return == 1,
+            ];
+        });
+
+        return response()->json($result);
     }
 
     public function store(Request $request)

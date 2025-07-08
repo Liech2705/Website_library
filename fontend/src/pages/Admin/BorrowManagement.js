@@ -1,41 +1,29 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "react-bootstrap";
 import { TrashFill, GearFill } from "react-bootstrap-icons";
 import AdminSidebarLayout from "../../components/AdminSidebar";
 import Pagination from "../../components/Pagination";
+import ApiServiceAdmin from "../../services/admin/api";
 import "../style.css";
 
-const borrowRecords = [
-  {
-    id: 20,
-    librarian: "thuthu",
-    reader: "Phạm Hoàng Yến Nhi",
-    bookTitle: "THƯỢNG ĐẾ GIẢNG CHÂN LÝ",
-    quantity: 4,
-    borrowDate: "2024-04-19T12:13:45",
-    dueDate: "2024-04-26T00:00:00",
-    note: "ok",
-    returned: false,
-  },
-  {
-    id: 21,
-    librarian: "thuthu",
-    reader: "Phạm Hoàng Yến Nhi",
-    bookTitle: "BÍ MẬT CỦA NHỮNG BÍ MẬT - TẬP 1",
-    quantity: 2,
-    borrowDate: "2024-04-19T12:14:16",
-    dueDate: "2024-04-30T00:00:00",
-    note: "ok",
-    returned: false,
-  },
-
-];
-
 export default function BorrowManagement() {
+  const [borrowRecords, setBorrowRecords] = useState([]);
   const [selectedTab, setSelectedTab] = useState("borrowing");
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+
+  useEffect(() => {
+    const fetchRecords = async () => {
+      try {
+        const res = await ApiServiceAdmin.getBorrowRecords();
+        setBorrowRecords(res);
+      } catch (error) {
+        console.error("Lỗi khi tải phiếu mượn:", error);
+      }
+    };
+    fetchRecords();
+  }, []);
 
   const handleReturnBook = (id) => {
     alert(`Trả sách phiếu #${id}`);

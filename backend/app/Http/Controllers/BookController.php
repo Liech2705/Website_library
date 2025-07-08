@@ -13,7 +13,33 @@ class BookController extends Controller
 
     public function index()
     {
-        return Book::all();
+        $books = Book::with(['authors:id,name', 'category:id,name', 'bookCopies'])->get();
+
+        // Đổi tên key cho đúng format frontend nếu cần
+        $books = $books->map(function ($book) {
+            return [
+                'id' => $book->id,
+                'title' => $book->title,
+                'authors' => $book->authors->map(function ($author) {
+                    return [
+                        'id' => $author->id,
+                        'name' => $author->name,
+                    ];
+                }),
+                'category' => [
+                    'id' => $book->category->id,
+                    'name' => $book->category->name,
+                ],
+                'publisher' => $book->publisher,
+                'description' => $book->description,
+                'year' => $book->year,
+                'book_copies' => $book->bookCopies,
+                'views' => $book->views,
+                'image' => $book->image,
+            ];
+        });
+
+        return response()->json($books);
     }
 
     public function _index()
@@ -96,5 +122,35 @@ class BookController extends Controller
         Book::destroy($id);
         $this->logDelete('Sách', $id);
         return response()->json(null, 204);
+    }
+
+    public function statistics(Request $request)
+    {
+        $books = Book::with('authors', 'bookCopies')->get();
+        $borrowRecords = BorrowRecord::with('bookCopy')->get();
+
+        $result = $books->map(function ($book) use ($borrowRecords) {
+            $monthlyData = [];
+            foreach (range(1, 12) as $month) {
+                $monthlyData[$month] = $borrowRecords
+                    ->filter(function ($record) use ($book, $month) {
+                        // Kiểm tra bookCopy tồn tại và book_id trùng với sách
+                        return $record->bookCopy
+                            && $record->bookCopy->id_book == $book->id
+                            && date('n', strtotime($record->start_time)) == $month;
+                    })
+                    ->count();
+            }
+
+            return [
+                'id' => $book->id,
+                'title' => $book->title,
+                'authors' => $book->authors->pluck('name')->join(', '),
+                'quantity' => $book->bookCopies ? $book->bookCopies->count() : 0,
+                'monthlyData' => $monthlyData,
+            ];
+        });
+
+        return response()->json($result);
     }
 }

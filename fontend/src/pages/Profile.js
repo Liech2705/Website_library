@@ -37,7 +37,7 @@ export default function ProfilePage() {
           phone: infor?.phone || "",
           address: infor?.address || "",
           school_name: infor?.school_name || "",
-          avatar: infor?.avatar || "",
+          avatar: process.env.REACT_APP_STORAGE_URL + infor?.avatar || "",
         });
       } catch (err) {
         // Nếu lỗi vẫn gán thông tin cơ bản
