@@ -55,7 +55,8 @@ export default function LoginForm() {
 
           <form onSubmit={login}>
            {["email", "password"].map((field, i) => (
-                <div className="mb-3" key={i} style={{ position: "relative" }}>
+              <div className="mb-3" key={i}>
+                <div style={{ position: "relative" }}>
                   <input
                     type={field === "password" ? (showPassword ? "text" : "password") : "text"}
                     className={`form-control ${errors[field] ? "is-invalid" : ""}`}
@@ -63,26 +64,29 @@ export default function LoginForm() {
                     value={user[field]}
                     onChange={(e) => setUser({ ...user, [field]: e.target.value })}
                   />
-                  
+
                   {field === "password" && (
                     <span
                       onClick={() => setShowPassword(!showPassword)}
                       style={{
                         position: "absolute",
-                        right: "10px",
+                        right: "25px",
                         top: "50%",
                         transform: "translateY(-50%)",
                         cursor: "pointer",
-                        color: "#aaa"
+                        color: "#aaa",
+                        zIndex: 2,
                       }}
                     >
                       {showPassword ? "🙈" : "👁️"}
                     </span>
                   )}
-
-                  {errors[field] && <div className="invalid-feedback">{errors[field]}</div>}
                 </div>
-              ))}
+
+                {errors[field] && <div className="invalid-feedback">{errors[field]}</div>}
+              </div>
+            ))}
+
 
             <div className="d-flex justify-content-between align-items-center mb-3">
               <div className="form-check">

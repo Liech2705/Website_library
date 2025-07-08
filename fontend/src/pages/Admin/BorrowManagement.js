@@ -94,7 +94,6 @@ export default function BorrowManagement() {
             <thead className="table-dark">
               <tr>
                 <th>Số phiếu</th>
-                <th>Người tạo phiếu</th>
                 <th>Tên độc giả</th>
                 <th>Tên sách</th>
                 <th>Số lượng mượn</th>
@@ -108,7 +107,6 @@ export default function BorrowManagement() {
               {currentRecords.map((r) => (
                 <tr key={r.id}>
                   <td>{r.id}</td>
-                  <td>{r.librarian}</td>
                   <td>{r.reader}</td>
                   <td>{r.bookTitle}</td>
                   <td>{r.quantity}</td>

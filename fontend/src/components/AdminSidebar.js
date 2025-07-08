@@ -33,12 +33,12 @@ export default function AdminSidebarLayout({ children }) {
       <div className="sidebar-custom p-3 text-white bg-dark" style={{ width: "280px" }}>
         <div className="text-center mb-4">
           <img
-            src="https://cdn-icons-png.flaticon.com/512/300/300221.png"
+            src="https://media.istockphoto.com/id/1202911884/vi/vec-to/logo-s%C3%A1ch-v%C4%83n-h%E1%BB%8Dc-gi%C3%A1o-d%E1%BB%A5c-th%C6%B0-vi%E1%BB%87n-ki%E1%BA%BFn-th%E1%BB%A9c-%C4%91%E1%BB%8Dc-trang-nghi%C3%AAn-c%E1%BB%A9u-gi%E1%BA%A5y-vector-h%E1%BB%8Dc-tr%C6%B0%E1%BB%9Dng.jpg?s=170667a&w=0&k=20&c=kfffsGCfUSLINQSvjA3PNfxflPmimOYnTP-s1Orkmpc="
             alt="logo"
             className="sidebar-logo mb-2"
             style={{ width: 50, height: 50 }}
           />
-          <h5>EAUT Library</h5>
+          <h5>Thư Viện</h5>
         </div>
 
         <ul className="nav flex-column gap-2">

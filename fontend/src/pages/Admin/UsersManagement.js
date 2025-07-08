@@ -48,10 +48,10 @@ export default function UsersManagement() {
     });
   }, [listUsers]);
 
-  // Filter and paginate
-  const filteredUsers = listUsers.filter((user) =>
-    user.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+const filteredUsers = listUsers.filter((user) =>
+  (user.name || "").toLowerCase().includes(searchTerm.toLowerCase())
+);
+
   const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
   const indexOfLast = currentPage * itemsPerPage;
   const indexOfFirst = indexOfLast - itemsPerPage;
@@ -160,9 +160,6 @@ export default function UsersManagement() {
                         <Button variant="outline-secondary" size="sm" className="me-1" onClick={() => handleEditClick(user)}>
                           <PencilFill />
                         </Button>
-                        <Button variant="outline-danger" size="sm" className="me-1" onClick={() => setDeletingUserId(user.id)}>
-                          <TrashFill />
-                        </Button>
                         <Button variant="outline-info" size="sm">
                           <InfoCircleFill />
                         </Button>
@@ -236,22 +233,6 @@ export default function UsersManagement() {
             </Button>
             <Button variant="success" onClick={handleSaveUser}>
               {editingUser ? "Lưu thay đổi" : "Thêm"}
-            </Button>
-          </Modal.Footer>
-        </Modal>
-
-        {/* Modal xác nhận xóa */}
-        <Modal show={!!deletingUserId} onHide={() => setDeletingUserId(null)} centered>
-          <Modal.Header closeButton>
-            <Modal.Title>Xác nhận xóa người dùng</Modal.Title>
-          </Modal.Header>
-          <Modal.Body>Bạn có chắc chắn muốn xóa người dùng này không?</Modal.Body>
-          <Modal.Footer>
-            <Button variant="secondary" onClick={() => setDeletingUserId(null)}>
-              Hủy
-            </Button>
-            <Button variant="danger" onClick={handleDeleteUser}>
-              Xóa
             </Button>
           </Modal.Footer>
         </Modal>

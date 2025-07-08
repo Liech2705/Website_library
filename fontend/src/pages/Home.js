@@ -7,7 +7,7 @@ export default function Home() {
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Gọi API khi component được mount
+  // Gọi API từ trang 1 (giữ nguyên ApiService)
   useEffect(() => {
     const fetchBooks = async () => {
       try {

@@ -25,11 +25,6 @@ export default function BookTabs() {
           ✍️ Tác giả
         </Nav.Link>
       </Nav.Item>
-      <Nav.Item>
-        <Nav.Link eventKey="/admin/bookmanagement/publisher" onClick={() => navigate("/admin/bookmanagement/publisher")}>
-          🏢 Nhà xuất bản
-        </Nav.Link>
-      </Nav.Item>
     </Nav>
   );
 }

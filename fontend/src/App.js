@@ -10,7 +10,6 @@ import {
   UsersManagement,
   CategoryManagement,
   AuthorManagement,
-  PublisherManagement,
   BorrowManagement,
   StatisticsReport
 } from "./pages";
@@ -82,7 +81,6 @@ function AppContent() {
           <Route path="/admin/usermanagement" element={auth.isLoggedIn && auth.role === "admin" ? <UsersManagement /> : <Navigate to="/login" />} />
           <Route path="/admin/bookmanagement/category" element={auth.isLoggedIn && auth.role === "admin" ? <CategoryManagement /> : <Navigate to="/login" />} />
           <Route path="/admin/bookmanagement/author" element={auth.isLoggedIn && auth.role === "admin" ? <AuthorManagement /> : <Navigate to="/login" />} />
-          <Route path="/admin/bookmanagement/publisher" element={auth.isLoggedIn && auth.role === "admin" ? <PublisherManagement /> : <Navigate to="/login" />} />
           <Route path="/admin/borrowManagement" element={auth.isLoggedIn && auth.role === "admin" ? <BorrowManagement /> : <Navigate to="/login" />} />
           <Route path="/admin/statisticsreport" element={auth.isLoggedIn && auth.role === "admin" ? <StatisticsReport /> : <Navigate to="/login" />} />
         </Routes>

@@ -2,6 +2,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import ApiService from "../services/api";
 import ToastMessage from "../components/ToastMessage";
+import ActionModal from "../components/ActionModal";
 
 export default function BookDetail() {
   const { id } = useParams();
@@ -13,6 +14,21 @@ export default function BookDetail() {
     message: "",
     variant: "info",
   });
+
+  const [showModal, setShowModal] = useState(false);
+  const [modalType, setModalType] = useState("borrow");
+
+  const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+  const userId = localStorage.getItem("userId");
+  const readerName = localStorage.getItem("username") || "Bạn đọc";
+
+  const now = new Date();
+  const due = new Date();
+  due.setDate(now.getDate() + 14);
+
+  const showToast = (message, variant = "info") => {
+    setToast({ show: true, message, variant });
+  };
 
   useEffect(() => {
     const fetchBook = async () => {
@@ -29,37 +45,48 @@ export default function BookDetail() {
     fetchBook();
   }, [id]);
 
-  const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
-
   const availableCopies = book?.book_copies?.filter(copy =>
     copy.status !== 0 && copy.status !== "0"
   ) || [];
   const availableCount = availableCopies.length;
   const isAvailable = availableCount > 0;
+  const availableCopy = availableCopies[0];
 
   const authors = book?.authors?.map(a => a.name).join(", ") || "Không rõ";
   const category = book?.category?.name || "Chưa phân loại";
 
-  const showToast = (message, variant = "info") => {
-    setToast({ show: true, message, variant });
-  };
+  const fullImage = book?.image_url?.startsWith("http")
+    ? book.image_url
+    : book?.image_url
+    ? `http://127.0.0.1:8000${book.image_url}`
+    : null;
 
-  const handleAction = (type) => {
-    if (!isLoggedIn) {
-      showToast(`❗ Bạn phải đăng nhập để ${type === "borrow" ? "mượn" : "đặt trước"} sách.`, "danger");
+  const handleConfirm = async () => {
+    if (!isLoggedIn || !userId) {
+      showToast("❗ Bạn cần đăng nhập.", "danger");
       return;
     }
 
-    const current = localStorage.getItem("currentBorrowedBook");
-    if (current && current !== book.id.toString()) {
-      showToast("❗ Bạn chỉ được mượn hoặc đặt trước 1 cuốn sách tại một thời điểm.", "warning");
-      return;
+    try {
+      if (modalType === "borrow") {
+        await ApiService.createBorrowRecord({
+          user_id: userId,
+          book_copy_id: availableCopy?.id,
+        });
+        showToast("✅ Đã gửi yêu cầu mượn sách!", "success");
+      } else {
+        await ApiService.createReservation({
+          user_id: userId,
+          book_id: book?.id,
+        });
+        showToast("✅ Đã gửi yêu cầu đặt trước!", "success");
+      }
+    } catch (err) {
+      console.error("Lỗi xử lý:", err);
+      showToast("❌ Thao tác thất bại. Thử lại sau.", "danger");
+    } finally {
+      setShowModal(false);
     }
-
-    localStorage.setItem("currentBorrowedBook", book.id.toString());
-    showToast(type === "borrow"
-      ? "✅ Đã gửi yêu cầu mượn sách!"
-      : "📬 Đã gửi yêu cầu đặt sách!", "success");
   };
 
   if (loading) {
@@ -84,10 +111,21 @@ export default function BookDetail() {
         onClose={() => setToast({ ...toast, show: false })}
       />
 
+      <ActionModal
+        show={showModal}
+        onClose={() => setShowModal(false)}
+        title={modalType === "borrow" ? "Phiếu mượn sách" : "Phiếu đặt trước"}
+        book={{ ...book, image: fullImage }}
+        readerName={readerName}
+        createdAt={now}
+        dueDate={modalType === "borrow" ? due : null}
+        onConfirm={handleConfirm}
+      />
+
       <div className="row align-items-center">
         <div className="col-md-4 mb-4">
           <img
-            src={book.image_url || "https://via.placeholder.com/300x400?text=No+Image"}
+            src={fullImage || "https://via.placeholder.com/300x400?text=No+Image"}
             alt={book.title}
             className="img-fluid rounded shadow"
           />
@@ -108,19 +146,27 @@ export default function BookDetail() {
           <div className="mt-4">
             {isAvailable ? (
               <>
-                <div className="alert alert-success mb-3">
-                  ✅ Sách hiện có sẵn. Mời bạn đến thư viện để mượn.
-                </div>
-                <button className="btn btn-primary" onClick={() => handleAction("borrow")}>
+                <div className="alert alert-success mb-3">✅ Sách hiện có sẵn.</div>
+                <button
+                  className="btn btn-primary"
+                  onClick={() => {
+                    setModalType("borrow");
+                    setShowModal(true);
+                  }}
+                >
                   Mượn Sách Ngay
                 </button>
               </>
             ) : (
               <>
-                <div className="alert alert-warning mb-3">
-                  ⚠️ Sách đã hết. Bạn có thể đặt trước.
-                </div>
-                <button className="btn btn-outline-danger" onClick={() => handleAction("reserve")}>
+                <div className="alert alert-warning mb-3">⚠️ Sách đã hết. Bạn có thể đặt trước.</div>
+                <button
+                  className="btn btn-outline-danger"
+                  onClick={() => {
+                    setModalType("reserve");
+                    setShowModal(true);
+                  }}
+                >
                   Đặt Trước
                 </button>
               </>

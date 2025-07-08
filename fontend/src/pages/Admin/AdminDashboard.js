@@ -42,7 +42,6 @@ export default function AdminDashboard() {
     <AdminSidebar>
       <Row className="mb-4">
         <Col><Card><Card.Body>📚 <h5>{summary.books} Sách</h5></Card.Body></Card></Col>
-        <Col><Card><Card.Body>👤 <h5>{summary.readers} Độc giả</h5></Card.Body></Card></Col>
         <Col><Card><Card.Body>🧑‍💻 <h5>{summary.accounts} Tài khoản</h5></Card.Body></Card></Col>
         <Col><Card><Card.Body>🛒 <h5>{summary.borrows} Lượt mượn sách</h5></Card.Body></Card></Col>
       </Row>

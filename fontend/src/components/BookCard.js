@@ -3,12 +3,12 @@ import { Link } from "react-router-dom";
 import ToastMessage from "./ToastMessage";
 import notificationSound from "../assets/thongbao.wav";
 import axios from "axios";
+import ActionModal from "../components/ActionModal.js"; // ➕ Thêm modal
 import "./style.css";
 
 export default function BookCard({ book }) {
-  const isLoggedIn = localStorage.getItem("isLoggedIn") === 'true';
-  console.log(isLoggedIn)
-  const userId = isLoggedIn ? localStorage.getItem("user_id") : null;
+  const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+  const userId = isLoggedIn ? localStorage.getItem("user_id") : null; // ✅ giữ nguyên theo trang 1
 
   const [toast, setToast] = useState({
     show: false,
@@ -16,21 +16,24 @@ export default function BookCard({ book }) {
     variant: "info",
   });
 
-  // Tính toán thông tin sách
+  const [showModal, setShowModal] = useState(false); // ➕ modal toggle
+
   const authors = book.authors?.map((a) => a.name).join(", ") || "Không rõ";
   const publisher = book.publisher || "Không rõ";
   const borrowCount = book.borrowCount || 0;
 
-  // 👉 Sửa logic: status !== 0 là còn sách
   const availableCopies = Array.isArray(book.book_copies)
     ? book.book_copies.filter((copy) => Number(copy.status) !== 0)
     : [];
   const isAvailable = availableCopies.length > 0;
   const availableCopy = availableCopies[0];
 
-  const handleBorrow = async (e) => {
-    e.preventDefault();
+  const now = new Date();
+  const due = new Date();
+  due.setDate(now.getDate() + 14);
+  const readerName = localStorage.getItem("username") || "Bạn đọc";
 
+  const handleBorrow = async () => {
     if (!isLoggedIn || !userId) {
       setToast({
         show: true,
@@ -81,9 +84,23 @@ export default function BookCard({ book }) {
         onClose={() => setToast({ ...toast, show: false })}
       />
 
+      {/* ➕ Modal xác nhận mượn sách */}
+      <ActionModal
+        show={showModal}
+        onClose={() => setShowModal(false)}
+        title="Xác nhận mượn sách"
+        book={book}
+        readerName={readerName}
+        createdAt={now}
+        dueDate={due}
+        onConfirm={() => {
+          setShowModal(false);
+          handleBorrow();
+        }}
+      />
+
       <Link to={`/book/${book.id}`} className="text-decoration-none text-dark">
         <div className="card h-100 shadow-sm border-0 rounded-4 overflow-hidden book-card hover-shadow">
-          {/* Ảnh bìa */}
           <div className="book-img-wrapper">
             <img
               src={book.image || "https://via.placeholder.com/150x220?text=No+Image"}
@@ -92,7 +109,6 @@ export default function BookCard({ book }) {
             />
           </div>
 
-          {/* Nội dung */}
           <div className="card-body bg-white d-flex flex-column">
             <h6 className="fw-semibold text-dark mb-2 text-truncate">{book.title}</h6>
             <div className="small text-muted mb-1 text-truncate">
@@ -106,10 +122,11 @@ export default function BookCard({ book }) {
             </div>
 
             <button
-              className={`btn btn-sm rounded-pill px-3 mt-auto ${
-                isAvailable ? "btn-success" : "btn-outline-secondary"
-              }`}
-              onClick={isAvailable ? handleBorrow : undefined}
+              className={`btn btn-sm rounded-pill px-3 mt-auto ${isAvailable ? "btn-success" : "btn-outline-secondary"}`}
+              onClick={(e) => {
+                e.preventDefault();
+                if (isAvailable) setShowModal(true); // 👉 mở modal thay vì mượn trực tiếp
+              }}
               disabled={!isAvailable}
             >
               {isAvailable ? "Mượn Sách" : "Hết Sách"}

@@ -18,7 +18,6 @@ export { default as BookManagement } from "./Admin/BookManagement";
 export { default as CategoryManagement } from "./Admin/CategoryManagement"; 
 export { default as AuthorManagement } from "./Admin/AuthorManagement"; 
 export { default as UsersManagement } from "./Admin/UsersManagement";
-export { default as PublisherManagement } from "./Admin/PublisherManagement"; 
 export { default as BorrowManagement } from "./Admin/BorrowManagement"; 
 export { default as StatisticsReport} from "./Admin/StatisticsReport"; 
 export { default as AdminDashboard } from "./Admin/AdminDashboard";

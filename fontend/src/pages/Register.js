@@ -99,61 +99,69 @@ export default function RegisterForm() {
             </div>
 
             {/* Password */}
-            <div className="mb-3 position-relative">
-              <input
-                type={showPassword ? "text" : "password"}
-                name="password"
-                className={`form-control ${errors.password ? "is-invalid" : ""}`}
-                placeholder="Mật khẩu"
-                value={form.password}
-                onChange={handleChange}
-              />
-              <span
-                onClick={() => setShowPassword(!showPassword)}
-                style={{
-                  position: "absolute",
-                  right: "10px",
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  cursor: "pointer",
-                  color: "#aaa"
-                }}
-              >
-                {showPassword ? "🙈" : "👁️"}
-              </span>
-              {errors.password && <div className="invalid-feedback">{errors.password}</div>}
-            </div>
+            <div className="mb-3">
+                <div style={{ position: "relative" }}>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    name="password"
+                    className={`form-control pe-5 ${errors.password ? "is-invalid" : ""}`}
+                    placeholder="Mật khẩu"
+                    value={form.password}
+                    onChange={handleChange}
+                  />
+                  <span
+                    onClick={() => setShowPassword(!showPassword)}
+                    style={{
+                      position: "absolute",
+                      right: "25px",
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      cursor: "pointer",
+                      color: "#aaa",
+                      zIndex: 2,
+                    }}
+                  >
+                    {showPassword ? "🙈" : "👁️"}
+                  </span>
+                </div>
+                {errors.password && <div className="invalid-feedback d-block">{errors.password}</div>}
+              </div>
+
 
             {/* Confirm Password */}
-            <div className="mb-3 position-relative">
-              <input
-                type={showConfirmPassword ? "text" : "password"}
-                name="confirmPassword"
-                className={`form-control ${errors.confirmPassword ? "is-invalid" : ""}`}
-                placeholder="Xác nhận mật khẩu"
-                value={form.confirmPassword}
-                onChange={handleChange}
-              />
-              <span
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                style={{
-                  position: "absolute",
-                  right: "10px",
-                  top: "50%",
-                  transform: "translateY(-50%)",
-                  cursor: "pointer",
-                  color: "#aaa"
-                }}
-              >
-                {showConfirmPassword ? "🙈" : "👁️"}
-              </span>
-              {errors.confirmPassword && <div className="invalid-feedback">{errors.confirmPassword}</div>}
+            <div className="mb-3">
+              <div style={{ position: "relative" }}>
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  name="confirmPassword"
+                  className={`form-control pe-5 ${errors.confirmPassword ? "is-invalid" : ""}`}
+                  placeholder="Xác nhận mật khẩu"
+                  value={form.confirmPassword}
+                  onChange={handleChange}
+                />
+                <span
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  style={{
+                    position: "absolute",
+                    right: "25px",
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    cursor: "pointer",
+                    color: "#aaa",
+                    zIndex: 2,
+                  }}
+                >
+                  {showConfirmPassword ? "🙈" : "👁️"}
+                </span>
+              </div>
+              {errors.confirmPassword && <div className="invalid-feedback d-block">{errors.confirmPassword}</div>}
             </div>
+
 
             {/* Checkbox + Submit */}
             <div className="form-check mb-3">
               <input className="form-check-input" type="checkbox" required id="agree" />
-              <label className="form-check-label" htmlFor="agree">
+              <label className="form-check-label" htmlFor="agree" required>
                 Tôi đồng ý với điều khoản sử dụng
               </label>
             </div>
