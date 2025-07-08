@@ -26,10 +26,10 @@ class AuthController extends Controller
         ]);
 
         User_infor::create([
-            'id_user' => $user->id,
+            'user_id' => $user->id,
             'phone' => $request->phone,
             'address' => null,
-            'image_url' => null,
+            'avatar' => null,
             'school_name' => null,
         ]);
 
