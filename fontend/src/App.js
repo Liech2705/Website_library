@@ -1,43 +1,60 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
 import BookList from "./components/BookList";
 import Header from "./components/Header";
 import Footer from "./components/Footer";
-import ApiService from "./services/api";
+
+import {
+  AdminDashboard,
+  BookManagement,
+  UsersManagement,
+  CategoryManagement,
+  AuthorManagement,
+  PublisherManagement,
+  BorrowManagement,
+  StatisticsReport
+} from "./pages";
 
 import {
   Home, Search, BookDetail, FilteredBooksPage,
   Login, Register, ForgotPassword, ChangePassword,
-  BorrowHistory, Profile, AdminDashboard
+  BorrowHistory, Profile
 } from "./pages";
 
 function AppContent() {
   const location = useLocation();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [isLoading, setIsLoading] = useState(true);
+
+  const [auth, setAuth] = useState({
+    isLoggedIn: localStorage.getItem("isLoggedIn") === "true",
+    role: localStorage.getItem("role") || ""
+  });
 
   useEffect(() => {
-    const checkAuth = async () => {
-      const authStatus = await ApiService.checkAuthStatus();
-      setIsLoggedIn(authStatus);
-      setIsLoading(false);
+    const updateAuth = () => {
+      setAuth({
+        isLoggedIn: localStorage.getItem("isLoggedIn") === "true",
+        role: localStorage.getItem("role") || ""
+      });
     };
 
-    checkAuth();
+    window.addEventListener("storage", updateAuth);
+    window.addEventListener("authChanged", updateAuth); 
+
+    return () => {
+      window.removeEventListener("storage", updateAuth);
+      window.removeEventListener("authChanged", updateAuth); 
+    };
   }, []);
 
-  const isLibrarian = localStorage.getItem("role") === "librarian";
 
-  const hideLayoutRoutes = ["/login", "/register", "/forgot-password", "/change-password"];
-  const hideLayout = hideLayoutRoutes.includes(location.pathname);
-
-  if (isLoading) {
-    return <div className="d-flex justify-content-center align-items-center min-vh-100">
-      <div className="spinner-border" role="status">
-        <span className="visually-hidden">Loading...</span>
-      </div>
-    </div>;
-  }
+  const hideLayoutRoutes = [
+    "/login", "/register", "/forgot-password", "/change-password",
+    "/admin/bookmanagement", "/admin/usermanagement",
+    "/admin/bookmanagement/category", "/admin/bookmanagement/author",
+    "/admin/bookmanagement/publisher", "/admin/borrowManagement",
+    "/admin/statisticsreport"
+  ];
+  const hideLayout = hideLayoutRoutes.includes(location.pathname) || location.pathname.startsWith("/library-management");
 
   return (
     <div className="d-flex flex-column min-vh-100">
@@ -52,18 +69,22 @@ function AppContent() {
           <Route path="/category/:category" element={<FilteredBooksPage />} />
 
           {/* Auth */}
-          <Route path="/login" element={!isLoggedIn ? <Login /> : <Navigate to="/" />} />
-          <Route path="/register" element={!isLoggedIn ? <Register /> : <Navigate to="/" />} />
+          <Route path="/login" element={!auth.isLoggedIn ? <Login /> : <Navigate to="/" />} />
+          <Route path="/register" element={!auth.isLoggedIn ? <Register /> : <Navigate to="/" />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/change-password" element={isLoggedIn ? <ChangePassword /> : <Navigate to="/login" />} />
-          <Route path="/profile" element={isLoggedIn ? <Profile /> : <Navigate to="/login" />} />
-
-          {/* User only */}
-          <Route path="/history" element={isLoggedIn ? <BorrowHistory /> : <Navigate to="/login" />} />
-          <Route path="/profile" element={isLoggedIn ? <Profile /> : <Navigate to="/login" />} />
+          <Route path="/change-password" element={auth.isLoggedIn ? <ChangePassword /> : <Navigate to="/login" />} />
+          <Route path="/profile" element={auth.isLoggedIn ? <Profile /> : <Navigate to="/login" />} />
+          <Route path="/history" element={auth.isLoggedIn ? <BorrowHistory /> : <Navigate to="/login" />} />
 
           {/* Admin only */}
-          <Route path="/library-management" element={isLoggedIn && isLibrarian ? <AdminDashboard /> : <Navigate to="/login" />} />
+          <Route path="/library-management" element={auth.isLoggedIn && auth.role === "admin" ? <AdminDashboard /> : <Navigate to="/login" />} />
+          <Route path="/admin/bookmanagement" element={auth.isLoggedIn && auth.role === "admin" ? <BookManagement /> : <Navigate to="/login" />} />
+          <Route path="/admin/usermanagement" element={auth.isLoggedIn && auth.role === "admin" ? <UsersManagement /> : <Navigate to="/login" />} />
+          <Route path="/admin/bookmanagement/category" element={auth.isLoggedIn && auth.role === "admin" ? <CategoryManagement /> : <Navigate to="/login" />} />
+          <Route path="/admin/bookmanagement/author" element={auth.isLoggedIn && auth.role === "admin" ? <AuthorManagement /> : <Navigate to="/login" />} />
+          <Route path="/admin/bookmanagement/publisher" element={auth.isLoggedIn && auth.role === "admin" ? <PublisherManagement /> : <Navigate to="/login" />} />
+          <Route path="/admin/borrowManagement" element={auth.isLoggedIn && auth.role === "admin" ? <BorrowManagement /> : <Navigate to="/login" />} />
+          <Route path="/admin/statisticsreport" element={auth.isLoggedIn && auth.role === "admin" ? <StatisticsReport /> : <Navigate to="/login" />} />
         </Routes>
       </div>
       {!hideLayout && <Footer />}

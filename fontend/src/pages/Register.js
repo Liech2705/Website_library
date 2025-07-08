@@ -5,20 +5,18 @@ import ApiService from "../services/api";
 export default function RegisterForm() {
   const navigate = useNavigate();
   const [form, setForm] = useState({
-    name: "", email: "", password: "", confirmPassword: "", phone: ""
+    email: "", password: "", confirmPassword: "", phone: ""
   });
   const [errors, setErrors] = useState({});
-  const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const validateEmail = (email) =>
     /^[\w-.]+@[\w-]+\.(edu\.vn)$/.test(email);
 
   const validateForm = () => {
     const errs = {};
-    const { name, email, password, confirmPassword, phone } = form;
-
-    if (!name.trim()) errs.name = "Vui lòng nhập tên đăng nhập.";
-    else if (name.length < 6) errs.name = "Tên đăng nhập không được nhỏ hơn 6 ký tự.";
+    const { email, password, confirmPassword, phone } = form;
 
     if (!email.trim()) errs.email = "Vui lòng nhập email.";
     else if (!validateEmail(email)) errs.email = "Email phải có định dạng .edu.vn";
@@ -30,6 +28,9 @@ export default function RegisterForm() {
     else if (password !== confirmPassword) errs.confirmPassword = "Mật khẩu xác nhận không trùng khớp.";
 
     if (!phone.trim()) errs.phone = "Vui lòng nhập số điện thoại.";
+
+    const existingUsers = JSON.parse(localStorage.getItem("users")) || [];
+    if (existingUsers.some(u => u.email === email)) errs.email = "Email đã được sử dụng.";
 
     return errs;
   };
@@ -46,33 +47,13 @@ export default function RegisterForm() {
       return;
     }
 
-    setIsLoading(true);
-    setErrors({});
-
     try {
-      console.log('Attempting registration...');
-      // Register using API service
-      await ApiService.register(form.name, form.email, form.password);
-
+      // Gọi API đăng ký
+      await ApiService.register(form.phone, form.email, form.password);
       alert("Đăng ký thành công!");
       navigate("/login");
-    } catch (error) {
-      console.error('Register error:', error);
-
-      // Handle validation errors from backend
-      if (error.message.includes('{')) {
-        try {
-          const backendErrors = JSON.parse(error.message);
-          setErrors(backendErrors);
-          return;
-        } catch (parseError) {
-          console.error('Error parsing backend errors:', parseError);
-        }
-      }
-
-      setErrors({ general: error.message || 'Đăng ký thất bại. Vui lòng thử lại.' });
-    } finally {
-      setIsLoading(false);
+    } catch (err) {
+      setErrors({ general: err.message || "Đăng ký thất bại." });
     }
   };
 
@@ -89,29 +70,87 @@ export default function RegisterForm() {
           </div>
 
           <p className="text-center text-muted">Điền đầy đủ thông tin bên dưới</p>
-          {errors.general && <div className="alert alert-danger">{errors.general}</div>}
 
           <form onSubmit={handleRegister} noValidate>
-            {[
-              { name: "name", type: "text", placeholder: "Tên đăng nhập" },
-              { name: "phone", type: "text", placeholder: "Số điện thoại" },
-              { name: "email", type: "email", placeholder: "Email .edu.vn" },
-              { name: "password", type: "password", placeholder: "Mật khẩu" },
-              { name: "confirmPassword", type: "password", placeholder: "Xác nhận mật khẩu" }
-            ].map(({ name, type, placeholder }) => (
-              <div className="mb-3" key={name}>
-                <input
-                  type={type}
-                  name={name}
-                  className={`form-control ${errors[name] ? "is-invalid" : ""}`}
-                  placeholder={placeholder}
-                  value={form[name]}
-                  onChange={handleChange}
-                />
-                {errors[name] && <div className="invalid-feedback">{errors[name]}</div>}
-              </div>
-            ))}
+            {/* Email */}
+            <div className="mb-3 position-relative">
+              <input
+                type="email"
+                name="email"
+                className={`form-control ${errors.email ? "is-invalid" : ""}`}
+                placeholder="Email .edu.vn"
+                value={form.email}
+                onChange={handleChange}
+              />
+              {errors.email && <div className="invalid-feedback">{errors.email}</div>}
+            </div>
 
+            {/* Phone */}
+            <div className="mb-3">
+              <input
+                type="text"
+                name="phone"
+                className={`form-control ${errors.phone ? "is-invalid" : ""}`}
+                placeholder="Số điện thoại"
+                value={form.phone}
+                onChange={handleChange}
+              />
+              {errors.phone && <div className="invalid-feedback">{errors.phone}</div>}
+            </div>
+
+            {/* Password */}
+            <div className="mb-3 position-relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                name="password"
+                className={`form-control ${errors.password ? "is-invalid" : ""}`}
+                placeholder="Mật khẩu"
+                value={form.password}
+                onChange={handleChange}
+              />
+              <span
+                onClick={() => setShowPassword(!showPassword)}
+                style={{
+                  position: "absolute",
+                  right: "10px",
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  cursor: "pointer",
+                  color: "#aaa"
+                }}
+              >
+                {showPassword ? "🙈" : "👁️"}
+              </span>
+              {errors.password && <div className="invalid-feedback">{errors.password}</div>}
+            </div>
+
+            {/* Confirm Password */}
+            <div className="mb-3 position-relative">
+              <input
+                type={showConfirmPassword ? "text" : "password"}
+                name="confirmPassword"
+                className={`form-control ${errors.confirmPassword ? "is-invalid" : ""}`}
+                placeholder="Xác nhận mật khẩu"
+                value={form.confirmPassword}
+                onChange={handleChange}
+              />
+              <span
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                style={{
+                  position: "absolute",
+                  right: "10px",
+                  top: "50%",
+                  transform: "translateY(-50%)",
+                  cursor: "pointer",
+                  color: "#aaa"
+                }}
+              >
+                {showConfirmPassword ? "🙈" : "👁️"}
+              </span>
+              {errors.confirmPassword && <div className="invalid-feedback">{errors.confirmPassword}</div>}
+            </div>
+
+            {/* Checkbox + Submit */}
             <div className="form-check mb-3">
               <input className="form-check-input" type="checkbox" required id="agree" />
               <label className="form-check-label" htmlFor="agree">
@@ -119,13 +158,9 @@ export default function RegisterForm() {
               </label>
             </div>
 
-            <button
-              type="submit"
-              className="btn btn-danger w-100"
-              disabled={isLoading}
-            >
-              {isLoading ? 'Đang đăng ký...' : 'Đăng ký'}
-            </button>
+            {errors.general && <div className="alert alert-danger">{errors.general}</div>}
+
+            <button type="submit" className="btn btn-danger w-100">Đăng ký</button>
             <p className="text-center mt-3">
               Đã có tài khoản? <Link to="/login" className="text-decoration-none">Đăng nhập</Link>
             </p>

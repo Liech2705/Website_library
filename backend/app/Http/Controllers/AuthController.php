@@ -15,20 +15,19 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|max:255',
+            'phone' => 'required|string|max:10',
             'email' => 'required|string|email|max:255|unique:users|regex:/^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.edu\.vn$/',
             'password' => 'required|string|min:6',
         ]);
 
         $user = User::create([
-            'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
         ]);
 
         User_infor::create([
-            'user_id' => $user->id,
-            'phone' => '0000000000',
+            'id_user' => $user->id,
+            'phone' => $request->phone,
             'address' => null,
             'image_url' => null,
             'school_name' => null,

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
+import ApiService from "../services/api";
 import BookCard from "../components/BookCard";
-import ApiService from "../services/api"
 import "bootstrap/dist/css/bootstrap.min.css";
 
 export default function Home() {
@@ -11,11 +11,10 @@ export default function Home() {
   useEffect(() => {
     const fetchBooks = async () => {
       try {
-        const booksData = await ApiService.getBooks();
-        setBooks(booksData); // Không cần .data vì ApiService đã trả về data trực tiếp
+        const res = await ApiService.getBooks();
+        setBooks(res);
       } catch (error) {
         console.error("Lỗi khi tải sách:", error);
-        setBooks([]); // Set empty array nếu có lỗi
       } finally {
         setLoading(false);
       }
@@ -93,45 +92,32 @@ export default function Home() {
         </div>
 
         {/* Loading */}
-        {loading && (
-          <div className="text-center py-5">
-            <div className="spinner-border text-primary" role="status"></div>
-            <p className="mt-3 text-muted">Đang tải sách...</p>
-          </div>
-        )}
+        {loading && <p className="text-center text-muted">Đang tải sách...</p>}
 
         {!loading && (
           <>
             {/* 📈 Sách hay nên đọc */}
             <section className="mb-5">
               <h3 className="mb-3 text-primary">📈 Sách Hay Nên Đọc</h3>
-              {topBooks.length > 0 ? (
-                <div className="row row-cols-1 row-cols-sm-2 row-cols-md-4 g-4">
-                  {topBooks.map((book) => (
-                    <div className="col" key={book.id}>
-                      <BookCard book={book} />
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-muted">Chưa có dữ liệu sách hay.</p>
-              )}
+              <div className="row row-cols-1 row-cols-sm-2 row-cols-md-4 g-4">
+                {topBooks.map((book) => (
+                  <div className="col" key={book.id}>
+                    <BookCard book={book} />
+                  </div>
+                ))}
+              </div>
             </section>
 
             {/* 🆕 Sách mới */}
             <section className="mb-5">
               <h3 className="mb-3 text-success">🆕 Sách Mới</h3>
-              {newBooks.length > 0 ? (
-                <div className="row row-cols-1 row-cols-sm-2 row-cols-md-4 g-4">
-                  {newBooks.map((book) => (
-                    <div className="col" key={book.id}>
-                      <BookCard book={book} />
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-muted">Chưa có dữ liệu sách mới.</p>
-              )}
+              <div className="row row-cols-1 row-cols-sm-2 row-cols-md-4 g-4">
+                {newBooks.map((book) => (
+                  <div className="col" key={book.id}>
+                    <BookCard book={book} />
+                  </div>
+                ))}
+              </div>
             </section>
           </>
         )}

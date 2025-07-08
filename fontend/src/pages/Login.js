@@ -2,11 +2,13 @@ import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import ApiService from "../services/api";
 
+
 export default function LoginForm() {
   const navigate = useNavigate();
   const [user, setUser] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({});
-  const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
 
   const validate = () => {
     const errs = {};
@@ -25,42 +27,14 @@ export default function LoginForm() {
     const errs = validate();
     if (Object.keys(errs).length > 0) return setErrors(errs);
 
-    setIsLoading(true);
-    setErrors({});
-
     try {
-      console.log('Attempting login with:', { email: user.email });
-
-      // Login using API service
-      const loginData = await ApiService.login(user.email, user.password);
-
-      // Store token
-      localStorage.setItem('access_token', loginData.access_token);
-      localStorage.setItem('token_type', loginData.token_type);
-      localStorage.setItem('isLoggedIn', 'true');
-
-      // Lưu thông tin user từ response
-      if (loginData.user) {
-        localStorage.setItem('user_id', loginData.user.id);
-        localStorage.setItem('username', loginData.user.name);
-        localStorage.setItem('role', loginData.user.role || 'reader');
-        localStorage.setItem('email', loginData.user.email);
-
-        console.log('Login successful, user role:', loginData.user.role);
-      } else {
-        // Fallback nếu không có thông tin user
-        localStorage.setItem('email', user.email);
-        localStorage.setItem('role', 'reader');
-        localStorage.setItem('username', user.email.split('@')[0]);
-      }
-
+      await ApiService.login(user.email, user.password);
+      console.log("Đăng nhập thành công, chuyển trang...");
+      // Đăng nhập thành công, ApiService đã lưu localStorage
       window.dispatchEvent(new Event("storage"));
       navigate("/");
-    } catch (error) {
-      console.error('Login error:', error);
-      setErrors({ general: error.message || 'Đăng nhập thất bại. Vui lòng thử lại.' });
-    } finally {
-      setIsLoading(false);
+    } catch (err) {
+      setErrors({ general: err.message || "Thông tin đăng nhập không đúng." });
     }
   };
 
@@ -80,21 +54,35 @@ export default function LoginForm() {
           {errors.general && <div className="alert alert-danger">{errors.general}</div>}
 
           <form onSubmit={login}>
-            {[
-              { name: "email", type: "email", placeholder: "Email .edu.vn" },
-              { name: "password", type: "password", placeholder: "Mật khẩu" }
-            ].map(({ name, type, placeholder }) => (
-              <div className="mb-3" key={name}>
-                <input
-                  type={type}
-                  className={`form-control ${errors[name] ? "is-invalid" : ""}`}
-                  placeholder={placeholder}
-                  value={user[name]}
-                  onChange={(e) => setUser({ ...user, [name]: e.target.value })}
-                />
-                {errors[name] && <div className="invalid-feedback">{errors[name]}</div>}
-              </div>
-            ))}
+           {["email", "password"].map((field, i) => (
+                <div className="mb-3" key={i} style={{ position: "relative" }}>
+                  <input
+                    type={field === "password" ? (showPassword ? "text" : "password") : "text"}
+                    className={`form-control ${errors[field] ? "is-invalid" : ""}`}
+                    placeholder={field === "email" ? "Email" : "Mật khẩu"}
+                    value={user[field]}
+                    onChange={(e) => setUser({ ...user, [field]: e.target.value })}
+                  />
+                  
+                  {field === "password" && (
+                    <span
+                      onClick={() => setShowPassword(!showPassword)}
+                      style={{
+                        position: "absolute",
+                        right: "10px",
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        cursor: "pointer",
+                        color: "#aaa"
+                      }}
+                    >
+                      {showPassword ? "🙈" : "👁️"}
+                    </span>
+                  )}
+
+                  {errors[field] && <div className="invalid-feedback">{errors[field]}</div>}
+                </div>
+              ))}
 
             <div className="d-flex justify-content-between align-items-center mb-3">
               <div className="form-check">
@@ -107,23 +95,8 @@ export default function LoginForm() {
             </div>
 
             <div className="d-flex gap-2">
-              <button
-                type="submit"
-                className="btn btn-danger w-50"
-                disabled={isLoading}
-              >
-                {isLoading ? 'Đang đăng nhập...' : 'Đăng nhập'}
-              </button>
+              <button type="submit" className="btn btn-danger w-50">Đăng nhập</button>
               <Link to="/register" className="btn btn-outline-danger w-50">Đăng ký</Link>
-            </div>
-
-            {/* Test accounts info */}
-            <div className="mt-3 p-3 bg-light rounded">
-              <small className="text-muted">
-                <strong>Test Accounts:</strong><br />
-                Admin: hoailinh@student.ctuet.edu.vn / HoaiLinh12345<br />
-                User: user@student.ctuet.edu.vn / User12345
-              </small>
             </div>
           </form>
         </div>

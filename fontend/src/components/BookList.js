@@ -19,16 +19,10 @@ export default function BookList() {
   useEffect(() => {
     const fetchBooks = async () => {
       try {
-        const booksData = await ApiService.getBooks();
-        if (booksData && Array.isArray(booksData)) {
-          setBooks(booksData);
-        } else {
-          console.error("Dữ liệu không hợp lệ:", booksData);
-          setBooks([]);
-        }
+        const res = await ApiService.getBooks();
+        setBooks(res);
       } catch (error) {
-        console.error("Lỗi tải sách:", error);
-        setBooks([]);
+        console.error("Lỗi khi tải sách:", error);
       } finally {
         setLoading(false);
       }
@@ -53,8 +47,8 @@ export default function BookList() {
         typeof b.category === "object" && b.category?.name
           ? b.category.name
           : typeof b.category === "string"
-            ? b.category
-            : "Chưa phân loại"
+          ? b.category
+          : "Chưa phân loại"
       )
     ),
   ];
@@ -68,8 +62,8 @@ export default function BookList() {
       typeof book.category === "object" && book.category?.name
         ? book.category.name
         : typeof book.category === "string"
-          ? book.category
-          : "Chưa phân loại";
+        ? book.category
+        : "Chưa phân loại";
     const publisher = book.publisher?.toLowerCase() || "";
     const year = String(book.year || "");
 

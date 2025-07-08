@@ -2,13 +2,12 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import ToastMessage from "./ToastMessage";
 import notificationSound from "../assets/thongbao.wav";
-import ApiService from "../services/api";
+import axios from "axios";
 import "./style.css";
 
 export default function BookCard({ book }) {
-  const isLoggedIn = ApiService.isAuthenticated();
-  const currentUser = ApiService.getCurrentUser();
-  const userId = currentUser?.id;
+  const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+  const userId = isLoggedIn ? localStorage.getItem("userId") : null;
 
   const [toast, setToast] = useState({
     show: false,
@@ -37,7 +36,7 @@ export default function BookCard({ book }) {
         message: "❗ Bạn phải đăng nhập để mượn sách.",
         variant: "warning",
       });
-      new Audio(notificationSound).play().catch(() => { });
+      new Audio(notificationSound).play().catch(() => {});
       return;
     }
 
@@ -51,31 +50,19 @@ export default function BookCard({ book }) {
     }
 
     try {
-      const response = await fetch('/api/borrow-records', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('access_token')}`,
-        },
-        body: JSON.stringify({
-          user_id: userId,
-          book_copy_id: availableCopy.id,
-        }),
+      await axios.post("http://127.0.0.1:8000/api/borrow-records", {
+        user_id: userId,
+        book_copy_id: availableCopy.id,
       });
-
-      if (!response.ok) {
-        throw new Error('Mượn sách thất bại');
-      }
 
       setToast({
         show: true,
         message: "✅ Yêu cầu mượn sách đã được gửi!",
         variant: "success",
       });
-      new Audio(notificationSound).play().catch(() => { });
+      new Audio(notificationSound).play().catch(() => {});
     } catch (error) {
-      console.error("Lỗi mượn sách:", error);
+      console.error("Lỗi mượn sách:", error.response?.data || error.message);
       setToast({
         show: true,
         message: "❌ Mượn sách thất bại. Vui lòng thử lại.",
@@ -118,8 +105,9 @@ export default function BookCard({ book }) {
             </div>
 
             <button
-              className={`btn btn-sm rounded-pill px-3 mt-auto ${isAvailable ? "btn-success" : "btn-outline-secondary"
-                }`}
+              className={`btn btn-sm rounded-pill px-3 mt-auto ${
+                isAvailable ? "btn-success" : "btn-outline-secondary"
+              }`}
               onClick={isAvailable ? handleBorrow : undefined}
               disabled={!isAvailable}
             >

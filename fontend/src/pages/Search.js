@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
-import axios from "axios";
+import ApiService from "../services/api";
 import BookCard from "../components/BookCard";
 
 export default function SearchPage() {
@@ -13,10 +13,9 @@ export default function SearchPage() {
   // Gọi API mỗi khi từ khóa thay đổi
   useEffect(() => {
     setLoading(true);
-    axios
-      .get("http://127.0.0.1:8000/api/reviews_books")
+    ApiService.getBooks()
       .then((res) => {
-        setBooks(res.data || []);
+        setBooks(res || []);
         setLoading(false);
       })
       .catch((err) => {

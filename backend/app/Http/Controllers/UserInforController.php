@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\User_infor;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class UserInforController extends Controller
 {
@@ -31,7 +33,7 @@ class UserInforController extends Controller
             'user_id' => 'required|exists:users,id',
             'phone' => 'required|string',
             'address' => 'nullable|string',
-            'image_url' => 'nullable|string',
+            'avatar' => 'nullable|string',
             'school_name' => 'nullable|string',
         ]);
         $userInfor = User_infor::create($validated);
@@ -48,7 +50,7 @@ class UserInforController extends Controller
         $validated = $request->validate([
             'phone' => 'sometimes|required|string',
             'address' => 'nullable|string',
-            'image_url' => 'nullable|string',
+            'avatar' => 'nullable|string',
             'school_name' => 'nullable|string',
         ]);
         $userInfor->update($validated);
@@ -64,5 +66,68 @@ class UserInforController extends Controller
         }
         $userInfor->delete();
         return response()->json(['message' => 'Xóa thành công']);
+    }
+
+    public function updateProfile(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+        $data = $request->validate([
+            'phone' => 'nullable|string|max:20',
+            'address' => 'nullable|string|max:255',
+            'school_name' => 'nullable|string|max:255',
+        ]);
+        $userInfor = User_infor::where('user_id', $user->id)->first();
+        if (!$userInfor) {
+            // Nếu chưa có thì tạo mới
+            $data['user_id'] = $user->id;
+            $userInfor = User_infor::create($data);
+        } else {
+            $userInfor->update($data);
+        }
+        return response()->json(['message' => 'Cập nhật thông tin thành công!', 'user_infor' => $userInfor]);
+    }
+
+    public function updateAvatar(Request $request)
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+        $request->validate([
+            'avatar' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+        ]);
+        $userInfor = User_infor::where('user_id', $user->id)->first();
+        if (!$userInfor) {
+            return response()->json(['message' => 'User info not found'], 404);
+        }
+        $path = $request->file('avatar')->store('avatars', 'public');
+        if ($userInfor->avatar) {
+            Storage::disk('public')->delete($userInfor->avatar);
+        }
+        $userInfor->avatar = $path;
+        $userInfor->save();
+        return response()->json(['avatar' => $path, 'url' => asset('storage/' . $path)]);
+    }
+
+    public function getMyInfor()
+    {
+        $user = Auth::user();
+        if (!$user) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+        $userInfor = User_infor::where('user_id', $user->id)->first();
+        return response()->json($userInfor);
+    }
+
+    public function getInforByUserId($userId)
+    {
+        $userInfor = User_infor::where('user_id', $userId)->first();
+        if (!$userInfor) {
+            return response()->json(['message' => 'Not found'], 404);
+        }
+        return response()->json($userInfor);
     }
 }

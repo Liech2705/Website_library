@@ -1,23 +1,61 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import ApiService from "../services/api";
 import "./style.css";
 
 export default function ProfilePage() {
+  // Lấy user từ localStorage (nếu đã đăng nhập)
+  const localUser = ApiService.getCurrentUser();
   const [user, setUser] = useState({
-    name: "Admin",
-    email: "admin@student.edu.com",
-    phone: "0899804328",
-    address: "Bình Yên, Nam Thanh, Nam Trực",
-    school_name: "Trường Đại học Công nghệ",
-    role: "admin",
-    status: "active", // hoặc 'locked'
-    avatar:
-      "https://yt3.ggpht.com/yti/ANjgQV-FgWf4XF8YlaoUDJNhBbH7KQ8nK9jSlWtuRle6_trGSaY=s88-c-k-c0x00ffffff-no-rj-mo",
-    password: "",
-    newPassword: "",
-    confirmPassword: "",
+    name: "",
+    email: "",
+    phone: "",
+    address: "",
+    school_name: "",
+    role: "",
+    status: "",
+    avatar: "",
   });
-
   const [errors, setErrors] = useState({});
+  const [success, setSuccess] = useState("");
+
+  // Lấy thông tin user_infor và user từ backend khi vào trang
+  useEffect(() => {
+    const fetchUserInfor = async () => {
+      try {
+        // Lấy thông tin user cơ bản từ localStorage
+        let baseUser = {
+          name: localUser.name || "",
+          email: localUser.email || "",
+          role: localUser.role || "",
+          status: "active"
+
+        };
+        // Lấy thông tin user_infor từ backend
+        const infor = await ApiService.getMyUserInfor();
+        setUser({
+          ...baseUser,
+          phone: infor?.phone || "",
+          address: infor?.address || "",
+          school_name: infor?.school_name || "",
+          avatar: infor?.avatar || "",
+        });
+      } catch (err) {
+        // Nếu lỗi vẫn gán thông tin cơ bản
+        setUser({
+          name: localUser.name || "",
+          email: localUser.email || "",
+          role: localUser.role || "",
+          status: localUser.status || "",
+          avatar: "https://yt3.ggpht.com/yti/ANjgQV-FgWf4XF8YlaoUDJNhBbH7KQ8nK9jSlWtuRle6_trGSaY=s88-c-k-c0x00ffffff-no-rj-mo",
+          phone: "",
+          address: "",
+          school_name: "",
+        });
+      }
+    };
+    fetchUserInfor();
+    // eslint-disable-next-line
+  }, []);
 
   const handleChange = (e) => {
     setUser({ ...user, [e.target.name]: e.target.value });
@@ -32,34 +70,38 @@ export default function ProfilePage() {
     return errs;
   };
 
-  const validatePassword = () => {
-    const errs = {};
-    if (!user.password) errs.password = "Vui lòng nhập mật khẩu hiện tại";
-    if (!user.newPassword) errs.newPassword = "Vui lòng nhập mật khẩu mới";
-    else if (user.newPassword.length < 6)
-      errs.newPassword = "Mật khẩu phải có ít nhất 6 ký tự";
-    if (user.newPassword !== user.confirmPassword)
-      errs.confirmPassword = "Xác nhận mật khẩu không trùng khớp";
-    return errs;
-  };
-
-  const handleSaveInfo = () => {
+  const handleSaveInfo = async () => {
     const errs = validateInfo();
     if (Object.keys(errs).length > 0) {
       setErrors(errs);
+      setSuccess("");
     } else {
-      alert("✅ Cập nhật thông tin thành công!");
-      setErrors({});
+      try {
+        await ApiService.updateUserProfile({
+          phone: user.phone,
+          address: user.address,
+          school_name: user.school_name,
+        });
+        setSuccess("✅ Cập nhật thông tin thành công!");
+        setErrors({});
+      } catch (err) {
+        setErrors({ general: err.message || "Cập nhật thất bại." });
+        setSuccess("");
+      }
     }
   };
 
-  const handleUpdatePassword = () => {
-    const errs = validatePassword();
-    if (Object.keys(errs).length > 0) {
-      setErrors(errs);
-    } else {
-      alert("✅ Cập nhật mật khẩu thành công!");
-      setErrors({});
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      try {
+        const res = await ApiService.updateUserAvatar(file);
+        setUser({ ...user, avatar: res.url });
+        setSuccess("✅ Đổi ảnh đại diện thành công!");
+      } catch (err) {
+        setErrors({ general: err.message || "Đổi ảnh đại diện thất bại." });
+        setSuccess("");
+      }
     }
   };
 
@@ -76,7 +118,7 @@ export default function ProfilePage() {
                 {/* Avatar */}
                 <div className="col-md-3 text-center">
                   <img
-                    src={user.avatar}
+                    src={user.avatar || "https://yt3.ggpht.com/yti/ANjgQV-FgWf4XF8YlaoUDJNhBbH7KQ8nK9jSlWtuRle6_trGSaY=s88-c-k-c0x00ffffff-no-rj-mo"}
                     alt="avatar"
                     className="rounded border mb-2"
                     style={{
@@ -92,15 +134,7 @@ export default function ProfilePage() {
                       type="file"
                       accept="image/*"
                       hidden
-                      onChange={(e) => {
-                        const file = e.target.files[0];
-                        if (file) {
-                          const reader = new FileReader();
-                          reader.onload = () =>
-                            setUser({ ...user, avatar: reader.result });
-                          reader.readAsDataURL(file);
-                        }
-                      }}
+                      onChange={handleAvatarChange}
                     />
                   </label>
                 </div>
@@ -164,7 +198,7 @@ export default function ProfilePage() {
                       <label className="form-label">Trạng thái</label>
                       <input
                         className="form-control"
-                        value={user.status === "active" ? "Hoạt động" : "Bị khóa"}
+                        value={user.status === "active" ? "Hoạt động" : user.status === "locked" ? "Bị khóa" : user.status}
                         disabled
                       />
                     </div>
@@ -172,6 +206,8 @@ export default function ProfilePage() {
                       <button className="btn btn-primary mt-3" onClick={handleSaveInfo}>
                         💾 Lưu thông tin
                       </button>
+                      {success && <div className="alert alert-success mt-2">{success}</div>}
+                      {errors.general && <div className="alert alert-danger mt-2">{errors.general}</div>}
                     </div>
                   </div>
                 </div>

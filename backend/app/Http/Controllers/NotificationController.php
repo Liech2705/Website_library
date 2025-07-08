@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Notification;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class NotificationController extends Controller
 {
@@ -34,5 +35,19 @@ class NotificationController extends Controller
     {
         Notification::destroy($id);
         return response()->json(null, 204);
+    }
+
+    public function getByUser($userId)
+    {
+        // Nếu muốn chỉ cho user xem notification của chính mình:
+        if (Auth::id() != $userId) {
+            return response()->json(['message' => 'Unauthorized'], 401);
+        }
+
+        $notifications = \App\Models\Notification::where('user_id', $userId)
+            ->orderByDesc('created_at')
+            ->get();
+
+        return response()->json($notifications);
     }
 }

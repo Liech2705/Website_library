@@ -7,6 +7,7 @@ export default function FilteredBooksPage() {
   const { category } = useParams();
   const [currentPage, setCurrentPage] = useState(1);
   const booksPerPage = 8;
+  const pageRangeDisplayed = 3; // Số lượng trang hiển thị giữa << >>
 
   const filteredBooks = books.filter((book) => {
     const bookCategory =
@@ -21,7 +22,22 @@ export default function FilteredBooksPage() {
   const indexOfFirstBook = indexOfLastBook - booksPerPage;
   const currentBooks = filteredBooks.slice(indexOfFirstBook, indexOfLastBook);
 
-  const handlePageChange = (page) => setCurrentPage(page);
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= totalPages) setCurrentPage(page);
+  };
+
+  // Xác định phạm vi trang hiển thị
+  const getPageNumbers = () => {
+    let start = Math.max(currentPage - Math.floor(pageRangeDisplayed / 2), 1);
+    let end = start + pageRangeDisplayed - 1;
+    if (end > totalPages) {
+      end = totalPages;
+      start = Math.max(end - pageRangeDisplayed + 1, 1);
+    }
+    const pages = [];
+    for (let i = start; i <= end; i++) pages.push(i);
+    return pages;
+  };
 
   return (
     <div className="container py-4">
@@ -43,25 +59,32 @@ export default function FilteredBooksPage() {
           <nav>
             <ul className="pagination">
               <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
+                <button className="page-link" onClick={() => handlePageChange(1)}>
+                  &laquo;
+                </button>
+              </li>
+              <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
                 <button className="page-link" onClick={() => handlePageChange(currentPage - 1)}>
-                  Back
+                  &lt;
                 </button>
               </li>
 
-              {[...Array(totalPages)].map((_, i) => (
-                <li
-                  key={i}
-                  className={`page-item ${currentPage === i + 1 ? "active" : ""}`}
-                >
-                  <button className="page-link" onClick={() => handlePageChange(i + 1)}>
-                    {i + 1}
+              {getPageNumbers().map((page) => (
+                <li key={page} className={`page-item ${page === currentPage ? "active" : ""}`}>
+                  <button className="page-link" onClick={() => handlePageChange(page)}>
+                    {page}
                   </button>
                 </li>
               ))}
 
               <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
                 <button className="page-link" onClick={() => handlePageChange(currentPage + 1)}>
-                  Next
+                  &gt;
+                </button>
+              </li>
+              <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
+                <button className="page-link" onClick={() => handlePageChange(totalPages)}>
+                  &raquo;
                 </button>
               </li>
             </ul>

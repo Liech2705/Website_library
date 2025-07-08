@@ -15,7 +15,7 @@ class User_infor extends Model
         'user_id',
         'phone',
         'address',
-        'image_url',
+        'avatar',
         'school_name'
     ];
 
@@ -24,7 +24,7 @@ class User_infor extends Model
      */
     public function user()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     /**
@@ -37,7 +37,7 @@ class User_infor extends Model
             'user_id' => $this->user_id,
             'phone' => $this->phone,
             'address' => $this->address,
-            'image_url' => $this->image_url,
+            'avatar' => $this->image_url,
             'school_name' => $this->school_name,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at

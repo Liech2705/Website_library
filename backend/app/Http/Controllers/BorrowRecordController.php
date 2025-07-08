@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\BorrowRecord;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class BorrowRecordController extends Controller
 {
@@ -14,7 +15,28 @@ class BorrowRecordController extends Controller
 
     public function store(Request $request)
     {
-        $borrowRecord = BorrowRecord::create($request->all());
+        $userId = Auth::id(); // Lấy id user hiện tại
+
+        // Đếm số lượng sách chưa trả của user này
+        $currentBorrowCount = \App\Models\BorrowRecord::where('id_user', $userId)
+            ->where('is_return', false)
+            ->count();
+
+        if ($currentBorrowCount >= 3) {
+            return response()->json([
+                'message' => 'Bạn chỉ được mượn tối đa 3 sách cùng lúc. Vui lòng trả sách trước khi mượn thêm.'
+            ], 403);
+        }
+
+        // Nếu chưa vượt quá giới hạn, cho phép mượn
+        $borrowRecord = BorrowRecord::create([
+            'id_user' => $userId,
+            'id_bookcopy' => $request->id_bookcopy,
+            'start_time' => now(),
+            'due_time' => now()->addDays(14),
+            // ... các trường khác
+        ]);
+
         return response()->json($borrowRecord, 201);
     }
 
@@ -34,5 +56,25 @@ class BorrowRecordController extends Controller
     {
         BorrowRecord::destroy($id);
         return response()->json(null, 204);
+    }
+
+    public function history($userId)
+    {
+        $records = BorrowRecord::with('bookCopy.book')
+            ->where('user_id', $userId)
+            ->orderByDesc('start_time')
+            ->get()
+            ->map(function ($record) {
+                return [
+                    'id' => $record->id,
+                    'id_bookcopy' => $record->id_bookcopy,
+                    'title' => $record->bookCopy->book->title ?? '',
+                    'start_time' => $record->start_time,
+                    'due_time' => $record->due_time,
+                    'end_time' => $record->end_time,
+                ];
+            });
+
+        return response()->json($records);
     }
 }

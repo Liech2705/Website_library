@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('borrow_records', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('id_user');
+            $table->unsignedBigInteger('user_id');
             $table->unsignedBigInteger('id_bookcopy');
             $table->dateTime('start_time');
             $table->dateTime('due_time');
@@ -25,7 +25,7 @@ return new class extends Migration
             $table->text('note')->nullable();
             $table->timestamps();
 
-            $table->foreign('id_user')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
             // Nếu có bảng bookcopies:
             // $table->foreign('id_bookcopy')->references('id')->on('bookcopies')->onDelete('cascade');
         });

@@ -17,5 +17,47 @@
 }
 
 
-/*   */
+/*  admin */
+/* Sidebar style */
+.sidebar-custom {
+  width: 250px;
+  background: linear-gradient(180deg, #1a273f, #2a5298);
+  min-height: 100vh;
+  color: white;
+  font-family: 'Segoe UI', sans-serif;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+}
+
+/* Logo */
+.sidebar-logo {
+  width: 60px;
+  height: 60px;
+}
+
+/* Sidebar icons */
+.sidebar-custom .nav-item {
+  padding: 8px 12px;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.sidebar-custom .nav-item:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  cursor: pointer;
+} 
+/* thêm sách  */
+.scrollable-table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.scrollable-table-wrapper table {
+  min-width: 1200px;
+  white-space: nowrap;
+}
+
+body {
+  overflow-x: hidden;
+}
+
 

@@ -25,7 +25,7 @@ class AdminActivityController extends Controller
     public function show($adminId)
     {
         $activities = AdminActivity::with('admin:id,name,email')
-            ->where('admin_id', $adminId)
+            ->where('id_admin', $adminId)
             ->orderBy('created_at', 'desc')
             ->paginate(20);
 

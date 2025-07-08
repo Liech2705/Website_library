@@ -11,13 +11,13 @@ class AdminActivity extends Model
     use HasFactory;
 
     protected $fillable = [
-        'admin_id',
+        'id_admin',
         'description'
     ];
 
     public function admin()
     {
-        return $this->belongsTo(User::class, 'admin_id');
+        return $this->belongsTo(User::class, 'id_admin');
     }
 
     /**
@@ -27,7 +27,7 @@ class AdminActivity extends Model
     {
         if (Auth::check() && Auth::user()->role === 'admin') {
             return self::create([
-                'admin_id' => Auth::id(),
+                'id_admin' => Auth::id(),
                 'description' => $description
             ]);
         }

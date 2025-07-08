@@ -1,3 +1,5 @@
+import axios from 'axios';
+
 const API_BASE_URL = 'http://127.0.0.1:8000/api';
 
 // Helper function to get auth headers
@@ -11,23 +13,24 @@ const getAuthHeaders = () => {
 };
 
 // Helper function to handle API responses
-const handleResponse = async (response) => {
-    const contentType = response.headers.get('content-type');
+const handleResponse = (response) => {
+    // Axios trả về response.data trực tiếp
+    return response.data;
+};
 
-    if (!contentType || !contentType.includes('application/json')) {
-        // Nếu response không phải JSON, có thể là HTML error page
-        const text = await response.text();
-        console.error('Non-JSON response:', text.substring(0, 200)); // Log first 200 chars
-        throw new Error(`Server error: ${response.status} ${response.statusText}`);
+// Helper function to handle errors
+const handleError = (error) => {
+    if (error.response) {
+        // Server trả về response với status code ngoài 2xx
+        const data = error.response.data;
+        throw new Error(data.message || JSON.stringify(data.errors) || `HTTP ${error.response.status}: ${error.response.statusText}`);
+    } else if (error.request) {
+        // Request đã gửi nhưng không nhận được response
+        throw new Error('No response from server.');
+    } else {
+        // Lỗi khác
+        throw new Error(error.message);
     }
-
-    const data = await response.json();
-
-    if (!response.ok) {
-        throw new Error(data.message || `HTTP ${response.status}: ${response.statusText}`);
-    }
-
-    return data;
 };
 
 // API service class
@@ -35,165 +38,208 @@ class ApiService {
     // Authentication methods
     static async login(email, password) {
         console.log('Attempting login with:', { email });
-
-        const response = await fetch(`${API_BASE_URL}/login`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-            },
-            body: JSON.stringify({ email, password }),
-        });
-
-        const data = await handleResponse(response);
-
-        // Lưu token và thông tin user vào localStorage
-        if (data.access_token) {
-            localStorage.setItem('access_token', data.access_token);
-            localStorage.setItem('token_type', data.token_type);
-            localStorage.setItem('isLoggedIn', 'true');
-
-            if (data.user) {
-                localStorage.setItem('user_id', data.user.id);
-                localStorage.setItem('username', data.user.name);
-                localStorage.setItem('email', data.user.email);
-                localStorage.setItem('role', data.user.role);
+        try {
+            const response = await axios.post(`${API_BASE_URL}/login`, { email, password }, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                },
+            });
+            const data = handleResponse(response);
+            // Lưu token và thông tin user vào localStorage
+            if (data.access_token) {
+                localStorage.setItem('access_token', data.access_token);
+                localStorage.setItem('token_type', data.token_type);
+                localStorage.setItem('isLoggedIn', 'true');
+                if (data.user) {
+                    localStorage.setItem('user_id', data.user.id);
+                    localStorage.setItem('username', data.user.name);
+                    localStorage.setItem('email', data.user.email);
+                    localStorage.setItem('role', data.user.role);
+                }
             }
+            return data;
+        } catch (error) {
+            handleError(error);
         }
-
-        return data;
     }
 
-    static async register(name, email, password) {
-        console.log('Attempting register with:', { name, email });
-
-        const response = await fetch(`${API_BASE_URL}/register`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-            },
-            body: JSON.stringify({ name, email, password }),
-        });
-
-        const data = await handleResponse(response);
-
-        // Lưu token và thông tin user vào localStorage
-        if (data.access_token) {
-            localStorage.setItem('access_token', data.access_token);
-            localStorage.setItem('token_type', data.token_type);
-            localStorage.setItem('isLoggedIn', 'true');
-
-            // Lấy thông tin user từ token hoặc tạo mặc định
-            const user = {
-                id: data.user?.id || 'new_user',
-                name: data.user?.name || 'New User',
-                email: data.user?.email || email,
-                role: data.user?.role || 'user',
-            };
-
-            localStorage.setItem('user_id', user.id);
-            localStorage.setItem('username', user.name);
-            localStorage.setItem('email', user.email);
-            localStorage.setItem('role', user.role);
+    static async register(phone, email, password) {
+        console.log('Attempting register with:', { phone, email });
+        try {
+            const response = await axios.post(`${API_BASE_URL}/register`, { phone, email, password }, {
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                },
+            });
+            const data = handleResponse(response);
+            // Lưu token và thông tin user vào localStorage
+            if (data.access_token) {
+                localStorage.setItem('access_token', data.access_token);
+                localStorage.setItem('token_type', data.token_type);
+                localStorage.setItem('isLoggedIn', 'true');
+                // Lấy thông tin user từ token hoặc tạo mặc định
+                const user = {
+                    id: data.user?.id || 'new_user',
+                    name: data.user?.name || 'New User',
+                    email: data.user?.email || email,
+                    role: data.user?.role || 'user',
+                };
+                localStorage.setItem('user_id', user.id);
+                localStorage.setItem('username', user.name);
+                localStorage.setItem('email', user.email);
+                localStorage.setItem('role', user.role);
+            }
+            // Handle validation errors from backend
+            if (data.errors) {
+                throw new Error(JSON.stringify(data.errors));
+            }
+            return data;
+        } catch (error) {
+            handleError(error);
         }
-
-        // Handle validation errors from backend
-        if (data.errors) {
-            throw new Error(JSON.stringify(data.errors));
-        }
-
-        return data;
     }
 
     static async logout() {
-        const response = await fetch(`${API_BASE_URL}/logout`, {
-            method: 'POST',
-            headers: getAuthHeaders(),
-        });
-
-        if (response.ok) {
-            // Clear local storage
-            localStorage.removeItem('access_token');
-            localStorage.removeItem('token_type');
-            localStorage.removeItem('isLoggedIn');
-            localStorage.removeItem('user_id');
-            localStorage.removeItem('username');
-            localStorage.removeItem('role');
-            localStorage.removeItem('email');
+        try {
+            const response = await axios.post(`${API_BASE_URL}/logout`, {}, {
+                headers: getAuthHeaders(),
+            });
+            if (response.status === 200) {
+                // Clear local storage
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('token_type');
+                localStorage.removeItem('isLoggedIn');
+                localStorage.removeItem('user_id');
+                localStorage.removeItem('username');
+                localStorage.removeItem('role');
+                localStorage.removeItem('email');
+            }
+            return response.data;
+        } catch (error) {
+            handleError(error);
         }
-
-        return response.json();
     }
 
     // User methods
     static async getUsers() {
-        const response = await fetch(`${API_BASE_URL}/users`, {
-            headers: getAuthHeaders(),
-        });
-
-        return handleResponse(response);
+        try {
+            const response = await axios.get(`${API_BASE_URL}/users`);
+            return handleResponse(response);
+        } catch (error) {
+            handleError(error);
+        }
     }
 
     static async getUserById(id) {
-        const response = await fetch(`${API_BASE_URL}/users/${id}`, {
-            headers: getAuthHeaders(),
-        });
-
-        return handleResponse(response);
+        try {
+            const response = await axios.get(`${API_BASE_URL}/users/${id}`);
+            return handleResponse(response);
+        } catch (error) {
+            handleError(error);
+        }
     }
 
     // Book methods
     static async getBooks() {
-        const response = await fetch(`${API_BASE_URL}/reviews_books`, {
-            headers: getAuthHeaders(),
-        });
-
-        return handleResponse(response);
+        try {
+            const response = await axios.get(`${API_BASE_URL}/reviews_books`);
+            return handleResponse(response);
+        } catch (error) {
+            handleError(error);
+        }
     }
 
     static async getBookById(id) {
-        const response = await fetch(`${API_BASE_URL}/reviews_books/${id}`, {
-            headers: getAuthHeaders(),
-        });
-
-        return handleResponse(response);
+        try {
+            const response = await axios.get(`${API_BASE_URL}/reviews_books/${id}`);
+            return handleResponse(response);
+        } catch (error) {
+            handleError(error);
+        }
     }
 
     // Category methods
-    static async getCategories() {
-        const response = await fetch(`${API_BASE_URL}/categories`, {
-            headers: getAuthHeaders(),
-        });
-
-        return handleResponse(response);
-    }
+    // static async getCategories() {
+    //     try {
+    //         const response = await axios.get(`${API_BASE_URL}/categories`, {
+    //             headers: getAuthHeaders(),
+    //         });
+    //         return handleResponse(response);
+    //     } catch (error) {
+    //         handleError(error);
+    //     }
+    // }
 
     // Author methods
-    static async getAuthors() {
-        const response = await fetch(`${API_BASE_URL}/authors`, {
-            headers: getAuthHeaders(),
-        });
-
-        return handleResponse(response);
-    }
+    // static async getAuthors() {
+    //     try {
+    //         const response = await axios.get(`${API_BASE_URL}/authors`, {
+    //             headers: getAuthHeaders(),
+    //         });
+    //         return handleResponse(response);
+    //     } catch (error) {
+    //         handleError(error);
+    //     }
+    // }
 
     // Borrow record methods
-    static async getBorrowRecords() {
-        const response = await fetch(`${API_BASE_URL}/borrow-records`, {
+    // static async getBorrowRecords() {
+    //     try {
+    //         const response = await axios.get(`${API_BASE_URL}/borrow-records`, {
+    //             headers: getAuthHeaders(),
+    //         });
+    //         return handleResponse(response);
+    //     } catch (error) {
+    //         handleError(error);
+    //     }
+    // }
+
+    // Notification methods
+    static async getNotificationsByUser(userId) {
+        const response = await axios.get(`${API_BASE_URL}/notifications/user/${userId}`, {
             headers: getAuthHeaders(),
         });
-
         return handleResponse(response);
     }
 
-    // Notification methods
-    static async getNotifications() {
-        const response = await fetch(`${API_BASE_URL}/notifications`, {
-            headers: getAuthHeaders(),
-        });
+    static async getBorrowRecordHistory(id) {
+        try {
+            const response = await axios.get(`${API_BASE_URL}/borrow-history/${id}`, {
+                headers: getAuthHeaders(),
+            });
+            return handleResponse(response);
+        } catch (error) {
+            handleError(error);
+        }
+    }
 
-        return handleResponse(response);
+    static async updateUserProfile(data) {
+        try {
+            const response = await axios.post(`${API_BASE_URL}/update-infor`, data, {
+                headers: getAuthHeaders(),
+            });
+            return handleResponse(response);
+        } catch (error) {
+            handleError(error);
+        }
+    }
+
+    static async updateUserAvatar(file) {
+        try {
+            const formData = new FormData();
+            formData.append('avatar', file);
+            const response = await axios.post(`${API_BASE_URL}/users/avatar`, formData, {
+                headers: {
+                    ...getAuthHeaders(),
+                    'Content-Type': 'multipart/form-data',
+                },
+            });
+            return handleResponse(response);
+        } catch (error) {
+            handleError(error);
+        }
     }
 
     // Check if user is authenticated
@@ -220,7 +266,6 @@ class ApiService {
     static isTokenExpired() {
         const token = localStorage.getItem('access_token');
         if (!token) return true;
-
         try {
             // Decode JWT token to check expiration
             const payload = JSON.parse(atob(token.split('.')[1]));
@@ -240,6 +285,28 @@ class ApiService {
             return false;
         }
         return true;
+    }
+
+    static async getMyUserInfor() {
+        try {
+            const response = await axios.get(`${API_BASE_URL}/user-infor/me`, {
+                headers: getAuthHeaders(),
+            });
+            return handleResponse(response);
+        } catch (error) {
+            handleError(error);
+        }
+    }
+
+    static async getUserInforById(userId) {
+        try {
+            const response = await axios.get(`${API_BASE_URL}/user-infor/${userId}`, {
+                headers: getAuthHeaders(),
+            });
+            return handleResponse(response);
+        } catch (error) {
+            handleError(error);
+        }
     }
 }
 

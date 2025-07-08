@@ -8,6 +8,7 @@ use App\Models\BorrowRecord;
 use App\Models\BookCopy;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\DB;
 
 class BorrowRecordSeeder extends Seeder
 {
@@ -16,6 +17,30 @@ class BorrowRecordSeeder extends Seeder
      */
     public function run(): void
     {
+        // Nếu có factory thì dùng factory
+        // BorrowRecord::factory()->count(10)->create();
+
+        // Nếu không có factory, tạo thủ công
+        $now = now();
+        $records = [];
+        for ($i = 1; $i <= 10; $i++) {
+            $records[] = [
+                'user_id' => 1, // hoặc random user id nếu có nhiều user
+                'id_bookcopy' => $i, // hoặc random bookcopy id nếu có nhiều bookcopy
+                'start_time' => $now->copy()->subDays(20 - $i),
+                'due_time' => $now->copy()->subDays(10 - $i),
+                'end_time' => $i % 2 == 0 ? $now->copy()->subDays(5 - $i) : null,
+                'is_extended_request' => false,
+                'is_extended_approved' => 'pending',
+                'is_return' => $i % 2 == 0,
+                'renew_count' => rand(0, 2),
+                'note' => 'Ghi chú mượn sách ' . $i,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ];
+        }
+        DB::table('borrow_records')->insert($records);
+
         // Lấy users và book copies
         $users = User::where('role', 'user')->get();
         $bookCopies = BookCopy::where('status', 'borrowed')->get();
@@ -31,19 +56,24 @@ class BorrowRecordSeeder extends Seeder
 
         foreach ($bookCopies as $copy) {
             if ($users->isNotEmpty()) {
-                $user = $users->random();
+                $userId = User::inRandomOrder()->value('id');
                 $borrowDate = $this->getRandomBorrowDate();
                 $dueDate = $borrowDate->copy()->addDays(14); // Mượn 14 ngày
                 $returnDate = $this->getRandomReturnDate($borrowDate, $dueDate);
 
                 BorrowRecord::create([
-                    'user_id' => $user->id,
-                    'book_copy_id' => $copy->id,
-                    'borrow_date' => $borrowDate,
-                    'due_date' => $dueDate,
-                    'return_date' => $returnDate,
-                    'status' => $returnDate ? 'returned' : 'borrowed',
-                    'notes' => $this->getRandomNotes(),
+                    'user_id' => $userId,
+                    'id_bookcopy' => $copy->id,
+                    'start_time' => $borrowDate,
+                    'due_time' => $dueDate,
+                    'end_time' => $returnDate,
+                    'is_extended_request' => false,
+                    'is_extended_approved' => 'pending',
+                    'is_return' => $returnDate ? true : false,
+                    'renew_count' => rand(0, 2),
+                    'note' => $this->getRandomNotes(),
+                    'created_at' => now(),
+                    'updated_at' => now(),
                 ]);
             }
         }
@@ -106,12 +136,17 @@ class BorrowRecordSeeder extends Seeder
 
                 BorrowRecord::create([
                     'user_id' => $user->id,
-                    'book_copy_id' => $copy->id,
-                    'borrow_date' => $borrowDate,
-                    'due_date' => $dueDate,
-                    'return_date' => $returnDate,
-                    'status' => 'returned',
-                    'notes' => 'Đã trả sách',
+                    'id_bookcopy' => $copy->id,
+                    'start_time' => $borrowDate,
+                    'due_time' => $dueDate,
+                    'end_time' => $returnDate,
+                    'is_extended_request' => false,
+                    'is_extended_approved' => 'pending',
+                    'is_return' => $returnDate ? true : false,
+                    'renew_count' => rand(0, 2),
+                    'note' => 'Đã trả sách',
+                    'created_at' => now(),
+                    'updated_at' => now(),
                 ]);
             }
         }

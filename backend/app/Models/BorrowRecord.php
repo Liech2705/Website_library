@@ -10,7 +10,7 @@ class BorrowRecord extends Model
     use HasFactory;
 
     protected $fillable = [
-        'id_user',
+        'user_id',
         'id_bookcopy',
         'start_time',
         'due_time',
@@ -34,7 +34,7 @@ class BorrowRecord extends Model
     // Quan hệ với User
     public function user()
     {
-        return $this->belongsTo(User::class, 'id_user');
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     // Quan hệ với BookCopy (nếu có model BookCopy)

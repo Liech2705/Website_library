@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import ToastMessage from "../components/ToastMessage";
 import notificationSound from "../assets/thongbao.wav";
-import axios from "axios";
+import ApiService from "../services/api";
 
 export default function BorrowHistory() {
   const [records, setRecords] = useState([]);
@@ -26,20 +26,19 @@ export default function BorrowHistory() {
   };
 
   useEffect(() => {
-    const userId = localStorage.getItem("userId") || 1;
-
-    axios.get(`http://127.0.0.1:8000/api/borrow-history/${userId}`)
-      .then(res => {
-        console.log("✅ API response:", res.data);
-
-        const data = Array.isArray(res.data) ? res.data : [];
+    const fetchHistory = async () => {
+      const userId = localStorage.getItem("user_id") || 1;
+      try {
+        const res = await ApiService.getBorrowRecordHistory(userId);
+        const data = Array.isArray(res) ? res : [];
         setRecords(data);
         setFilteredRecords(data);
-      })
-      .catch(err => {
+      } catch (err) {
         console.error("❌ API error:", err);
         showToast("❗ Không thể tải lịch sử mượn trả.", "danger");
-      });
+      }
+    };
+    fetchHistory();
   }, []);
 
   const showToast = (message, variant = "info") => {

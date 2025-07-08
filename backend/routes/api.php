@@ -17,6 +17,7 @@ use App\Http\Controllers\UserInforController;
 use App\Http\Controllers\AdminActivityController;
 
 
+
 Route::middleware('auth:sanctum')->group(function () {
     // Các resource không cần admin cho index/show
     Route::apiResource('users', UserController::class)->only(['index', 'show']);
@@ -29,6 +30,14 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('borrow-records', BorrowRecordController::class)->only(['index', 'show']);
     Route::apiResource('notifications', NotificationController::class)->only(['index', 'show']);
     Route::apiResource('reservation', ReservationController::class)->only(['index', 'show']);
+
+    // Các api custom ở ngoài
+    Route::get('/borrow-history/{userId}', [BorrowRecordController::class, 'history']);
+    Route::get('/notifications/user/{userId}', [NotificationController::class, 'getByUser']);
+    Route::post('/users/avatar', [UserController::class, 'updateAvatar']);
+    Route::post('/update-infor', [UserInforController::class, 'updateProfile']);
+    Route::get('/user-infor/me', [UserInforController::class, 'getMyInfor']);
+    Route::get('/user-infor/{userId}', [UserInforController::class, 'getInforByUserId']);
 
     // Các thao tác thêm/sửa/xóa chỉ cho admin
     Route::middleware('adminonly')->group(function () {

@@ -51,7 +51,7 @@ class ReservationSeeder extends Seeder
             }
 
             Reservation::create([
-                'id_user' => $user->id,
+                'user_id' => $user->id,
                 'id_book' => $book->id,
                 'status' => $status,
                 'notified_time' => $notifiedTime,

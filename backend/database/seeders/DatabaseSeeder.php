@@ -16,6 +16,7 @@ class DatabaseSeeder extends Seeder
         // User::factory(10)->create();
 
         $this->call([
+            UserSeeder::class,
             CategorySeeder::class,
             AuthorSeeder::class,
             BookSeeder::class,
@@ -23,8 +24,8 @@ class DatabaseSeeder extends Seeder
             BookCopySeeder::class,
             BorrowRecordSeeder::class,
             ReservationSeeder::class,
-            UserSeeder::class,
             NotificationSeeder::class,
+            UserInforSeeder::class,
             // ... các seeder khác
         ]);
     }

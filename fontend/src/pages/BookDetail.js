@@ -17,19 +17,19 @@ export default function BookDetail() {
   useEffect(() => {
     const fetchBook = async () => {
       try {
-        const bookData = await ApiService.getBookById(id);
-        setBook(bookData);
-      } catch (error) {
-        console.error("Lỗi khi tải sách:", error);
+        const res = await ApiService.getBookById(id);
+        setBook(res);
+      } catch (err) {
+        console.error("Lỗi khi tải sách:", err);
+        setBook(null);
       } finally {
         setLoading(false);
       }
     };
-
     fetchBook();
   }, [id]);
 
-  const isLoggedIn = ApiService.isAuthenticated();
+  const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
 
   const availableCopies = book?.book_copies?.filter(copy =>
     copy.status !== 0 && copy.status !== "0"

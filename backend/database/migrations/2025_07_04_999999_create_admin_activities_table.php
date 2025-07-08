@@ -13,11 +13,11 @@ return new class extends Migration
     {
         Schema::create('admin_activities', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('admin_id');
+            $table->unsignedBigInteger('id_admin');
             $table->text('description'); // Mô tả hành động của admin
             $table->timestamps();
 
-            $table->foreign('admin_id')->references('id')->on('users')->onDelete('cascade');
+            $table->foreign('id_admin')->references('id')->on('users')->onDelete('cascade');
         });
     }
 

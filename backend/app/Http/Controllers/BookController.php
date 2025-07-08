@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Book;
+use App\Models\BorrowRecord;
 use App\Traits\AdminActivityLogger;
 use Illuminate\Http\Request;
 
