@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { Button } from "react-bootstrap";
-import { TrashFill, GearFill } from "react-bootstrap-icons";
+import { Button, Modal, Form } from "react-bootstrap";
+import { TrashFill } from "react-bootstrap-icons";
 import AdminSidebarLayout from "../../components/AdminSidebar";
 import Pagination from "../../components/Pagination";
 import ApiServiceAdmin from "../../services/admin/api";
@@ -8,16 +8,25 @@ import "../style.css";
 
 export default function BorrowManagement() {
   const [borrowRecords, setBorrowRecords] = useState([]);
-  const [selectedTab, setSelectedTab] = useState("borrowing");
+  const [selectedTab, setSelectedTab] = useState("pending");
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [showRejectModal, setShowRejectModal] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState("");
+  const [rejectingId, setRejectingId] = useState(null);
+
   const itemsPerPage = 10;
 
   useEffect(() => {
     const fetchRecords = async () => {
       try {
         const res = await ApiServiceAdmin.getBorrowRecords();
-        setBorrowRecords(res);
+        // Gán mock status để test các tab
+        const withStatus = res.map((r, i) => ({
+          ...r,
+          status: i % 3 === 0 ? "pending" : r.returned ? "returned" : "borrowing"
+        }));
+        setBorrowRecords(withStatus);
       } catch (error) {
         console.error("Lỗi khi tải phiếu mượn:", error);
       }
@@ -25,22 +34,26 @@ export default function BorrowManagement() {
     fetchRecords();
   }, []);
 
-  const handleReturnBook = (id) => {
-    alert(`Trả sách phiếu #${id}`);
+  const handleApprove = (id) => {
+    setBorrowRecords((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, status: "borrowing" } : r))
+    );
   };
 
-  // Lọc theo trạng thái (mượn/đã trả)
-  const filteredByTab = borrowRecords.filter(
-    (r) => r.returned === (selectedTab === "returned")
-  );
+  const handleReject = () => {
+    alert(`📩 Đã gửi lý do từ chối phiếu #${rejectingId}: ${rejectionReason}`);
+    setBorrowRecords((prev) => prev.filter((r) => r.id !== rejectingId));
+    setShowRejectModal(false);
+    setRejectionReason("");
+    setRejectingId(null);
+  };
 
-  // Lọc theo từ khóa
+  const filteredByTab = borrowRecords.filter((r) => r.status === selectedTab);
   const filteredRecords = filteredByTab.filter((r) =>
     r.reader.toLowerCase().includes(searchTerm.toLowerCase()) ||
     r.bookTitle.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Phân trang
   const totalPages = Math.ceil(filteredRecords.length / itemsPerPage);
   const indexOfLast = currentPage * itemsPerPage;
   const indexOfFirst = indexOfLast - itemsPerPage;
@@ -51,32 +64,32 @@ export default function BorrowManagement() {
   return (
     <AdminSidebarLayout>
       <div className="bg-white p-4 rounded shadow-sm">
+        {/* Tabs */}
         <div className="d-flex justify-content-between align-items-center mb-3">
           <div>
-            <Button
-              variant={selectedTab === "borrowing" ? "dark" : "outline-dark"}
-              className="me-2"
-              onClick={() => {
-                setSelectedTab("borrowing");
-                setCurrentPage(1);
-              }}
-            >
-              Phiếu đang mượn
-            </Button>
-            <Button
-              variant={selectedTab === "returned" ? "dark" : "outline-dark"}
-              onClick={() => {
-                setSelectedTab("returned");
-                setCurrentPage(1);
-              }}
-            >
-              Phiếu đã trả
-            </Button>
+            {["pending", "borrowing", "returned"].map((tab) => (
+              <Button
+                key={tab}
+                variant={selectedTab === tab ? "dark" : "outline-dark"}
+                className="me-2"
+                onClick={() => {
+                  setSelectedTab(tab);
+                  setCurrentPage(1);
+                }}
+              >
+                {tab === "pending"
+                  ? "Phiếu chờ duyệt"
+                  : tab === "borrowing"
+                  ? "Phiếu đang mượn"
+                  : "Phiếu đã trả"}
+              </Button>
+            ))}
           </div>
           <Button variant="success">+ Lập phiếu mượn</Button>
         </div>
 
-        <div className="d-flex justify-content-between align-items-center mb-3">
+        {/* Search */}
+        <div className="mb-3">
           <input
             type="text"
             className="form-control w-25"
@@ -89,6 +102,7 @@ export default function BorrowManagement() {
           />
         </div>
 
+        {/* Table */}
         <div className="scrollable-table-wrapper">
           <table className="table table-striped table-bordered table-hover mt-3">
             <thead className="table-dark">
@@ -114,20 +128,37 @@ export default function BorrowManagement() {
                   <td>{new Date(r.dueDate).toLocaleString()}</td>
                   <td>{r.note}</td>
                   <td>
-                    <Button variant="outline-secondary" size="sm" className="me-1">
-                      <GearFill />
-                    </Button>
-                    <Button variant="outline-danger" size="sm" className="me-1">
-                      <TrashFill />
-                    </Button>
-                    {selectedTab === "borrowing" && (
+                    {selectedTab === "pending" ? (
+                      <>
+                        <Button
+                          size="sm"
+                          variant="outline-success"
+                          className="me-2"
+                          onClick={() => handleApprove(r.id)}
+                        >
+                          Duyệt
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline-danger"
+                          onClick={() => {
+                            setShowRejectModal(true);
+                            setRejectingId(r.id);
+                          }}
+                        >
+                          Từ chối
+                        </Button>
+                      </>
+                    ) : selectedTab === "borrowing" ? (
                       <Button
-                        variant="outline-success"
                         size="sm"
-                        onClick={() => handleReturnBook(r.id)}
+                        variant="outline-primary"
+                        onClick={() => alert(`Trả sách phiếu #${r.id}`)}
                       >
                         Trả sách
                       </Button>
+                    ) : (
+                      <span className="text-muted">✓ Đã trả</span>
                     )}
                   </td>
                 </tr>
@@ -136,7 +167,7 @@ export default function BorrowManagement() {
           </table>
         </div>
 
-        {/* Phân trang */}
+        {/* Pagination */}
         {totalPages > 1 && (
           <div className="mt-3 d-flex justify-content-center">
             <Pagination
@@ -147,6 +178,30 @@ export default function BorrowManagement() {
           </div>
         )}
       </div>
+
+      {/* Modal nhập lý do từ chối */}
+      <Modal show={showRejectModal} onHide={() => setShowRejectModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Lý do từ chối</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form.Control
+            as="textarea"
+            rows={3}
+            value={rejectionReason}
+            onChange={(e) => setRejectionReason(e.target.value)}
+            placeholder="Nhập lý do từ chối..."
+          />
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowRejectModal(false)}>
+            Hủy
+          </Button>
+          <Button variant="danger" onClick={handleReject}>
+            Gửi lý do
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </AdminSidebarLayout>
   );
 }

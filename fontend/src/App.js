@@ -11,7 +11,9 @@ import {
   CategoryManagement,
   AuthorManagement,
   BorrowManagement,
-  StatisticsReport
+  StatisticsReport,
+  BookCopyManagement,
+  AdminActionHistory
 } from "./pages";
 
 import {
@@ -51,10 +53,14 @@ function AppContent() {
     "/admin/bookmanagement", "/admin/usermanagement",
     "/admin/bookmanagement/category", "/admin/bookmanagement/author",
     "/admin/bookmanagement/publisher", "/admin/borrowManagement",
-    "/admin/statisticsreport"
+    "/admin/statisticsreport","/admin/history"
   ];
-  const hideLayout = hideLayoutRoutes.includes(location.pathname) || location.pathname.startsWith("/library-management");
-
+  const hideLayout = hideLayoutRoutes.includes(location.pathname) ||
+  (
+    location.pathname.startsWith("/admin/books/") &&
+    location.pathname.endsWith("/copies")
+  ) ||
+  location.pathname.startsWith("/library-management");
   return (
     <div className="d-flex flex-column min-vh-100">
       {!hideLayout && <Header />}
@@ -77,7 +83,9 @@ function AppContent() {
 
           {/* Admin only */}
           <Route path="/library-management" element={auth.isLoggedIn && auth.role === "admin" ? <AdminDashboard /> : <Navigate to="/login" />} />
+          <Route path="/admin/history" element={auth.isLoggedIn && auth.role === "admin" ? <  AdminActionHistory /> : <Navigate to="/login" />} />
           <Route path="/admin/bookmanagement" element={auth.isLoggedIn && auth.role === "admin" ? <BookManagement /> : <Navigate to="/login" />} />
+          <Route path="/admin/books/:bookId/copies" element={auth.isLoggedIn && auth.role === "admin" ? <BookCopyManagement /> : <Navigate to="/login" />} />
           <Route path="/admin/usermanagement" element={auth.isLoggedIn && auth.role === "admin" ? <UsersManagement /> : <Navigate to="/login" />} />
           <Route path="/admin/bookmanagement/category" element={auth.isLoggedIn && auth.role === "admin" ? <CategoryManagement /> : <Navigate to="/login" />} />
           <Route path="/admin/bookmanagement/author" element={auth.isLoggedIn && auth.role === "admin" ? <AuthorManagement /> : <Navigate to="/login" />} />
