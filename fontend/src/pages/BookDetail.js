@@ -1,4 +1,4 @@
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import ApiService from "../services/api";
 import ToastMessage from "../components/ToastMessage";
@@ -6,17 +6,12 @@ import ActionModal from "../components/ActionModal";
 
 export default function BookDetail() {
   const { id } = useParams();
-  const navigate = useNavigate();
   const [book, setBook] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [toast, setToast] = useState({
-    show: false,
-    message: "",
-    variant: "info",
-  });
-
+  const [toast, setToast] = useState({ show: false, message: "", variant: "info" });
   const [showModal, setShowModal] = useState(false);
   const [modalType, setModalType] = useState("borrow");
+  const [relatedBooks, setRelatedBooks] = useState([]);
 
   const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
   const userId = localStorage.getItem("user_id");
@@ -45,6 +40,26 @@ export default function BookDetail() {
     fetchBook();
   }, [id]);
 
+  useEffect(() => {
+    const fetchRelatedBooks = async () => {
+      try {
+        const all = await ApiService.getAllBooks();
+        const related = all.filter(
+          b =>
+            b.id !== parseInt(id) &&
+            (
+              b.category?.name === book?.category?.name ||
+              b.authors?.some(a => book.authors?.map(x => x.name).includes(a.name))
+            )
+        );
+        setRelatedBooks(related.slice(0, 6));
+      } catch (err) {
+        console.error("Lỗi khi lấy sách liên quan:", err);
+      }
+    };
+    if (book) fetchRelatedBooks();
+  }, [book, id]);
+
   const availableCopies = book?.book_copies?.filter(copy =>
     copy.status !== 0 && copy.status !== "0"
   ) || [];
@@ -65,6 +80,11 @@ export default function BookDetail() {
       return;
     }
 
+    if (!availableCopy && modalType === "borrow") {
+      showToast("📕 Không tìm thấy bản sao còn sẵn để mượn.", "warning");
+      return;
+    }
+
     try {
       if (modalType === "borrow") {
         await ApiService.createBorrowRecord({
@@ -81,7 +101,7 @@ export default function BookDetail() {
       }
     } catch (err) {
       console.error("Lỗi xử lý:", err);
-      showToast("❌ " + err.message, "danger");
+      showToast("❌ Thao tác thất bại. Thử lại sau.", "danger");
     } finally {
       setShowModal(false);
     }
@@ -120,6 +140,7 @@ export default function BookDetail() {
         onConfirm={handleConfirm}
       />
 
+      {/* Phần chi tiết sách */}
       <div className="row align-items-center">
         <div className="col-md-4 mb-4">
           <img
@@ -173,13 +194,52 @@ export default function BookDetail() {
         </div>
       </div>
 
+      {/* Mô tả sách */}
       <div className="mt-5 pt-4 border-top">
         <h5 className="text-muted mb-3">Giới Thiệu Sách</h5>
         <h6 className="text-danger">{book.title?.toUpperCase()}</h6>
-        <p style={{ textAlign: "justify" }}>
-          {book.description || `Cuốn sách "${book.title}" mang đến nhiều cảm xúc và giá trị sống. Hãy đón đọc để khám phá những điều tuyệt vời từ tác phẩm này.`}
-        </p>
+        {book.description ? (
+          <p style={{ textAlign: "justify", whiteSpace: "pre-line" }}>{book.description}</p>
+        ) : (
+          <div className="text-muted fst-italic">Chưa có mô tả cho cuốn sách này.</div>
+        )}
       </div>
+
+      {/* Sách gợi ý */}
+      {relatedBooks.length > 0 && (
+        <div className="mt-5">
+          <h5 className="text-muted mb-3">📘 Gợi ý sách cùng thể loại / tác giả</h5>
+          <div className="row">
+            {relatedBooks.map(rb => {
+              const img = rb.image_url?.startsWith("http")
+                ? rb.image_url
+                : `http://127.0.0.1:8000${rb.image_url || ""}`;
+
+              return (
+                <div key={rb.id} className="col-md-4 mb-4">
+                  <div className="card h-100 shadow-sm">
+                    <img
+                      src={img || "https://via.placeholder.com/300x400?text=No+Image"}
+                      className="card-img-top"
+                      alt={rb.title}
+                      style={{ height: "280px", objectFit: "cover" }}
+                    />
+                    <div className="card-body">
+                      <h6 className="card-title text-primary">{rb.title}</h6>
+                      <p className="card-text text-muted" style={{ fontSize: "0.9rem" }}>
+                        {rb.authors?.map(a => a.name).join(", ") || "Không rõ tác giả"}
+                      </p>
+                      <Link to={`/books/${rb.id}`} className="btn btn-sm btn-outline-dark">
+                        Xem chi tiết
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       <div className="mt-4">
         <Link to="/" className="btn btn-outline-dark">← Quay lại danh sách</Link>

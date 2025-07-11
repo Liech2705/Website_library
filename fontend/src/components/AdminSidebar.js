@@ -7,6 +7,7 @@ export default function AdminSidebarLayout({ children }) {
   const location = useLocation();
   const [showNotifications, setShowNotifications] = useState(false);
   const [openBookMenu, setOpenBookMenu] = useState(true);
+  const [isSidebarVisible, setIsSidebarVisible] = useState(true);
   const notiRef = useRef();
 
   const notifications = [
@@ -30,76 +31,94 @@ export default function AdminSidebarLayout({ children }) {
   return (
     <div className="d-flex min-vh-100 bg-light">
       {/* Sidebar */}
-      <div className="sidebar-custom p-3 text-white bg-dark" style={{ width: "280px" }}>
-        <div className="text-center mb-4">
-          <img
-            src="https://media.istockphoto.com/id/1202911884/vi/vec-to/logo-s%C3%A1ch-v%C4%83n-h%E1%BB%8Dc-gi%C3%A1o-d%E1%BB%A5c-th%C6%B0-vi%E1%BB%87n-ki%E1%BA%BFn-th%E1%BB%A9c-%C4%91%E1%BB%8Dc-trang-nghi%C3%AAn-c%E1%BB%A9u-gi%E1%BA%A5y-vector-h%E1%BB%8Dc-tr%C6%B0%E1%BB%9Dng.jpg?s=170667a&w=0&k=20&c=kfffsGCfUSLINQSvjA3PNfxflPmimOYnTP-s1Orkmpc="
-            alt="logo"
-            className="sidebar-logo mb-2"
-            style={{ width: 50, height: 50 }}
-          />
-          <h5>Thư Viện</h5>
+      <div className={`sidebar-custom p-3 text-white bg-dark ${isSidebarVisible ? "show" : "hide"}`}>
+
+          <div className="text-center mb-4">
+            <img
+              src="https://media.istockphoto.com/id/1202911884/vi/vec-to/logo-s%C3%A1ch-v%C4%83n-h%E1%BB%8Dc-gi%C3%A1o-d%E1%BB%A5c-th%C6%B0-vi%E1%BB%87n-ki%E1%BA%BFn-th%E1%BB%A9c-%C4%91%E1%BB%8Dc-trang-nghi%C3%AAn-c%E1%BB%A9u-gi%E1%BA%A5y-vector-h%E1%BB%8Dc-tr%C6%B0%E1%BB%9Dng.jpg?s=170667a&w=0&k=20&c=kfffsGCfUSLINQSvjA3PNfxflPmimOYnTP-s1Orkmpc="
+              alt="logo"
+              className="sidebar-logo mb-2"
+              style={{ width: 50, height: 50 }}
+            />
+            <h5>Thư Viện</h5>
+          </div>
+
+          <ul className="nav flex-column gap-2">
+            <li className="nav-item">
+              <Link
+                to="/library-management"
+                className={`nav-link ${isActive("/library-management") ? "text-warning fw-bold" : "text-white"}`}
+              >
+                <i className="bi bi-grid me-1" /> Dashboard
+              </Link>
+            </li>
+
+            <li className="nav-item">
+              <Link
+                to="/admin/bookmanagement"
+                className={`nav-link ${isActive("/admin/bookmanagement") ? "text-warning fw-bold" : "text-white"}`}
+              >
+                <i className="bi bi-journal-bookmark-fill me-2" /> Quản lý sách 
+              </Link>
+            </li>
+
+            <li className="nav-item">
+              <Link
+                to="/admin/usermanagement"
+                className={`nav-link ${isActive("/admin/usermanagement") ? "text-warning fw-bold" : "text-white"}`}
+              >
+                <i className="bi bi-people me-2" /> Quản lý người dùng
+              </Link>
+            </li>
+
+            <li className="nav-item">
+              <Link
+                to="/admin/borrowManagement"
+                className={`nav-link ${isActive("/admin/borrowManagement") ? "text-warning fw-bold" : "text-white"}`}
+              >
+                <i className="bi bi-arrow-left-right me-2" /> Quản lý mượn trả
+              </Link>
+            </li>
+
+             <li className="nav-item">
+                  <Link
+                    to="/admin/history"
+                    className={`nav-link ${isActive("/admin/history") ? "text-warning fw-bold" : "text-white"}`}
+                  >
+                    <i className="bi bi-clock-history me-2" /> Lịch sử thao tác
+                  </Link>
+                </li>
+
+            <li className="nav-item">
+              <Link
+                to="/admin/statisticsreport"
+                className={`nav-link ${isActive("/admin/statisticsreport") ? "text-warning fw-bold" : "text-white"}`}
+              >
+                <i className="bi bi-bar-chart-line me-2" /> Báo cáo thống kê
+              </Link>
+            </li>
+
+
+            <li className="nav-item mt-4">
+              <Link to="/" className="nav-link text-danger">
+                <i className="bi bi-box-arrow-left me-2" /> Thoát
+              </Link>
+            </li>
+          </ul>
         </div>
+      
 
-        <ul className="nav flex-column gap-2">
-          <li className="nav-item">
-            <Link
-              to="/library-management"
-              className={`nav-link ${isActive("/library-management") ? "text-warning fw-bold" : "text-white"}`}
-            >
-              <i className="bi bi-grid me-2" /> Dashboard
-            </Link>
-          </li>
-
-          <li className="nav-item">
-            <Link
-              to="/admin/bookmanagement"
-              className={`nav-link ${isActive("/admin/bookmanagement") ? "text-warning fw-bold" : "text-white"}`}
-            >
-              <i className="bi bi-people me-2" /> Quản lý sách 
-            </Link>
-          </li>
-
-          <li className="nav-item">
-            <Link
-              to="/admin/usermanagement"
-              className={`nav-link ${isActive("/admin/usermanagement") ? "text-warning fw-bold" : "text-white"}`}
-            >
-              <i className="bi bi-people me-2" /> Quản lý người dùng
-            </Link>
-          </li>
-
-          <li className="nav-item">
-            <Link
-              to="/admin/borrowManagement"
-              className={`nav-link ${isActive("/admin/borrowManagement") ? "text-warning fw-bold" : "text-white"}`}
-            >
-              <i className="bi bi-arrow-left-right me-2" /> Quản lý mượn trả
-            </Link>
-          </li>
-
-          <li className="nav-item">
-            <Link
-              to="/admin/statisticsreport"
-              className={`nav-link ${isActive("/admin/statisticsreport") ? "text-warning fw-bold" : "text-white"}`}
-            >
-              <i className="bi bi-bar-chart-line me-2" /> Báo cáo thống kê
-            </Link>
-          </li>
-
-          <li className="nav-item mt-4">
-            <Link to="/" className="nav-link text-danger">
-              <i className="bi bi-box-arrow-left me-2" /> Thoát
-            </Link>
-          </li>
-        </ul>
-      </div>
-
-      {/* Content */}
+      {/* Main Content */}
       <div className="flex-grow-1 p-4" style={{ overflowX: "hidden" }}>
         {/* Topbar */}
         <div className="d-flex justify-content-between align-items-center mb-4">
-          {/* <input type="text" className="form-control w-50" placeholder="Tìm kiếm..." /> */}
+          {/* Hamburger icon */}
+          <button
+            className="btn btn-outline-secondary me-3"
+            onClick={() => setIsSidebarVisible(!isSidebarVisible)}
+          >
+            <i className="bi bi-list fs-4" />
+          </button>
 
           <div className="d-flex align-items-center gap-3 ms-auto">
             <div className="position-relative" ref={notiRef}>
@@ -145,7 +164,7 @@ export default function AdminSidebarLayout({ children }) {
           </div>
         </div>
 
-        {/* Main Content */}
+        {/* Content children */}
         {children}
       </div>
     </div>
