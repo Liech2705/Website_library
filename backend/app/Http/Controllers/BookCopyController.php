@@ -35,4 +35,26 @@ class BookCopyController extends Controller
         BookCopy::destroy($id);
         return response()->json(null, 204);
     }
+
+    public function approveBorrow($id)
+    {
+        $bookCopy = BookCopy::findOrFail($id);
+        $bookCopy->status = 'borrowed';
+        $bookCopy->save();
+        return response()->json(['message' => 'Book copy approved for borrow', 'book_copy' => $bookCopy], 200);
+    }
+
+    public function rejectBorrow($id)
+    {
+        $bookCopy = BookCopy::findOrFail($id);
+        $bookCopy->status = 'available';
+        $bookCopy->save();
+        // Nếu có trường lưu lý do từ chối trong BookCopy, hãy lưu lại ở đây
+        // $bookCopy->reject_reason = $reason;
+        // $bookCopy->save();
+        return response()->json([
+            'message' => 'Book copy borrow rejected',
+            'book_copy' => $bookCopy
+        ], 200);
+    }
 }

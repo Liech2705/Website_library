@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Table, Button, Modal, Form, Toast } from "react-bootstrap";
 import { PencilFill, TrashFill, InfoCircleFill } from "react-bootstrap-icons";
 import { useNavigate } from "react-router-dom";
@@ -6,57 +6,17 @@ import AdminSidebarLayout from "../../components/AdminSidebar";
 import BookTabs from "../../components/BookTabs";
 import Pagination from "../../components/Pagination";
 import "../style.css";
+import ApiService from "../../services/api";
+import ApiServiceAdmin from "../../services/admin/api";
 
-// 🔹 Mock dữ liệu sách
-const mockBooks = [
-  {
-    id: 1,
-    title: "Bí mật của hoa vàng",
-    author: "Osho",
-    category: "Triết học",
-    publisher: "NXB Lao Động",
-    description: "Một tác phẩm tâm linh giúp bạn hiểu rõ bản thân.",
-    year: 2010,
-    image: "https://via.placeholder.com/50x70?text=Book+1",
-  },
-  {
-    id: 2,
-    title: "Cây cam ngọt của tôi",
-    author: "José Mauro de Vasconcelos",
-    category: "Văn học thiếu nhi",  
-    publisher: "NXB Kim Đồng",
-    description: "Câu chuyện cảm động về tuổi thơ và lòng trắc ẩn.",
-    year: 2012,
-    image: "https://via.placeholder.com/50x70?text=Book+2",
-  },
-  {
-    id: 3,
-    title: "Lược sử loài người",
-    author: "Yuval Noah Harari",
-    category: "Lịch sử",
-    publisher: "NXB Thế Giới",
-    description: "Khái quát tiến trình phát triển của nhân loại từ sơ khai đến hiện đại.",
-    year: 2018,
-    image: "https://via.placeholder.com/50x70?text=Book+3",
-  },
-];
-
-// 🔹 Mock dữ liệu bản sao sách
-const mockBookCopies = [
-  { id: 1, book_id: 1, status: "available" },
-  { id: 2, book_id: 1, status: "borrowed" },
-  { id: 3, book_id: 2, status: "borrowed" },
-  { id: 4, book_id: 2, status: "borrowed" },
-  { id: 5, book_id: 3, status: "available" },
-];
-
-// 🔹 Dữ liệu chọn
-const categories = ["Triết học", "Lịch sử", "Văn học thiếu nhi"];
-const authors = ["Osho", "Yuval Noah Harari", "José Mauro de Vasconcelos"];
 const publishers = ["NXB Kim Đồng", "NXB Lao Động", "NXB Thế Giới"];
 
 export default function BookManagement() {
-  const [books, setBooks] = useState(mockBooks);
+  const [books, setBooks] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [authors, setAuthors] = useState([]);
+  const [bookcopies, setBookcopies] = useState([]);
+  const [bookAuthors, setBookAuthors] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const booksPerPage = 10;
@@ -76,6 +36,60 @@ export default function BookManagement() {
   const [editingBook, setEditingBook] = useState(null);
   const [deletingBookId, setDeletingBookId] = useState(null);
 
+  useEffect(() => {
+    const fetchBooks = async () => {
+      try {
+        const res = await ApiService.getBooks();
+        setBooks(res);
+      } catch (err) {
+        console.log(err.message);
+      }
+    };
+
+    const fetchAuthors = async () => {
+      try {
+        const res = await ApiServiceAdmin.getAuthors();
+        setAuthors(res);
+      } catch (err) {
+        console.log(err.message);
+      }
+    };
+
+    const fetchCategories = async () => {
+      try {
+        const res = await ApiServiceAdmin.getCategories();
+        setCategories(res);
+      } catch (err) {
+        console.log(err.message);
+      }
+    };
+
+    const fetchBookCopies = async () => {
+      try {
+        const res = await ApiServiceAdmin.getBookCopies();
+        setBookcopies(res);
+      } catch (err) {
+        console.log(err.message);
+      }
+    };
+
+    const fetchBookAuthors = async () => {
+      try {
+        const res = await ApiServiceAdmin.getBookAuthors();
+        setBookAuthors(res);
+      } catch (err) {
+        console.log(err.message);
+      }
+    };
+
+    fetchBooks();
+    fetchAuthors();
+    fetchCategories();
+    fetchBookCopies();
+    fetchBookAuthors();
+  }, []);
+
+
   const navigate = useNavigate();
 
   const filteredBooks = books.filter((book) =>
@@ -89,26 +103,58 @@ export default function BookManagement() {
 
   const handlePageChange = (page) => setCurrentPage(page);
 
-  const handleAddBook = () => {
+  const handleAddBook = async () => {
     if (editingBook) {
-      setBooks(
-        books.map((book) =>
-          book.id === editingBook.id ? { ...editingBook, ...newBook } : book
-        )
-      );
+      // Gửi lên API cập nhật sách với id_category và id_author là số
+      try {
+        await ApiServiceAdmin.updateBook(editingBook.id, {
+          title: newBook.title,
+          id_category: newBook.category,
+          id_author: newBook.author,
+          publisher: newBook.publisher,
+          description: newBook.description,
+          year: newBook.year,
+          image: newBook.image,
+        });
+        // Sau khi sửa, reload lại danh sách
+        const res = await ApiService.getBooks();
+        setBooks(res);
+        setShowToast(true);
+      } catch (err) {
+        alert('Lỗi khi chỉnh sửa sách: ' + err.message);
+      }
     } else {
-      setBooks([
-        ...books,
-        {
-          id: books.length + 1,
-          ...newBook,
-        },
-      ]);
+      try {
+        // 1. Thêm sách
+        const bookRes = await ApiServiceAdmin.addBook({
+          title: newBook.title,
+          id_category: newBook.category,
+          publisher: newBook.publisher,
+          description: newBook.description,
+          year: newBook.year,
+          image: newBook.image,
+        });
+        // 2. Thêm liên kết tác giả
+        if (bookRes && newBook.author) {
+          await ApiServiceAdmin.addBookAuthor({
+            id_book: bookRes.id,
+            id_author: newBook.author,
+          });
+        }
+        // Sau khi thêm, reload lại danh sách
+        const res = await ApiService.getBooks();
+        setBooks(res);
+        // Reload lại bookAuthors để hiển thị tác giả
+        const bookAuthorRes = await ApiServiceAdmin.getBookAuthors();
+        setBookAuthors(bookAuthorRes);
+        setShowToast(true);
+      } catch (err) {
+        alert('Lỗi khi thêm sách: ' + err.message);
+      }
     }
 
     setShowAddModal(false);
     setShowConfirmModal(false);
-    setShowToast(true);
     setNewBook({
       title: "",
       author: "",
@@ -127,10 +173,17 @@ export default function BookManagement() {
     setShowAddModal(true);
   };
 
-  const handleDeleteBook = () => {
-    setBooks(books.filter((book) => book.id !== deletingBookId));
+  const handleDeleteBook = async () => {
+    try {
+      await ApiServiceAdmin.deleteBook(deletingBookId);
+      // Sau khi xóa, reload lại danh sách
+      const res = await ApiService.getBooks();
+      setBooks(res);
+      setShowToast(true);
+    } catch (err) {
+      alert('Lỗi khi xóa sách: ' + err.message);
+    }
     setDeletingBookId(null);
-    setShowToast(true);
   };
 
   return (
@@ -174,9 +227,17 @@ export default function BookManagement() {
             </thead>
             <tbody>
               {currentBooks.map((book, index) => {
-                const isAvailable = mockBookCopies.some(
-                  (copy) => copy.book_id === book.id && copy.status === "available"
+                const isAvailable = bookcopies.some(
+                  (copy) => (copy.id_book === book.id || copy.book_id === book.id) && copy.status === "available"
                 );
+                // Lấy tên tác giả từ bookAuthors và authors
+                const authorIds = bookAuthors
+                  .filter((ba) => ba.id_book === book.id)
+                  .map((ba) => ba.id_author);
+                const authorNames = authors
+                  .filter((a) => authorIds.includes(a.id))
+                  .map((a) => a.name)
+                  .join(', ');
 
                 return (
                   <tr key={book.id}>
@@ -189,8 +250,8 @@ export default function BookManagement() {
                       />
                     </td>
                     <td>{book.title}</td>
-                    <td>{book.author}</td>
-                    <td>{book.category}</td>
+                    <td>{authorNames}</td>
+                    <td>{typeof book.category === 'object' ? book.category.name : book.category}</td>
                     <td>{book.publisher}</td>
                     <td>{book.description}</td>
                     <td>{book.year}</td>
@@ -221,7 +282,7 @@ export default function BookManagement() {
                       <Button
                         variant="outline-info"
                         size="sm"
-                        onClick={() => navigate(`/admin/books/${book.id}/copies`)}
+                        onClick={() => navigate(`/admin/books/${book.id}/copies?title=${encodeURIComponent(book.title)}`)}
                       >
                         <InfoCircleFill />
                       </Button>
@@ -257,11 +318,13 @@ export default function BookManagement() {
                 <Form.Label>Tác giả</Form.Label>
                 <Form.Select
                   value={newBook.author}
-                  onChange={(e) => setNewBook({ ...newBook, author: e.target.value })}
+                  onChange={(e) => setNewBook({ ...newBook, author: Number(e.target.value) })}
                 >
                   <option value="">-- Chọn tác giả --</option>
                   {authors.map((author, idx) => (
-                    <option key={idx} value={author}>{author}</option>
+                    <option key={idx} value={typeof author === 'object' ? author.id : author}>
+                      {typeof author === 'object' ? author.name : author}
+                    </option>
                   ))}
                 </Form.Select>
               </Form.Group>
@@ -269,11 +332,13 @@ export default function BookManagement() {
                 <Form.Label>Thể loại</Form.Label>
                 <Form.Select
                   value={newBook.category}
-                  onChange={(e) => setNewBook({ ...newBook, category: e.target.value })}
+                  onChange={(e) => setNewBook({ ...newBook, category: Number(e.target.value) })}
                 >
                   <option value="">-- Chọn thể loại --</option>
                   {categories.map((cat, idx) => (
-                    <option key={idx} value={cat}>{cat}</option>
+                    <option key={idx} value={typeof cat === 'object' ? cat.id : cat}>
+                      {typeof cat === 'object' ? cat.name : cat}
+                    </option>
                   ))}
                 </Form.Select>
               </Form.Group>

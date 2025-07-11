@@ -48,9 +48,9 @@ export default function UsersManagement() {
     });
   }, [listUsers]);
 
-const filteredUsers = listUsers.filter((user) =>
-  (user.name || "").toLowerCase().includes(searchTerm.toLowerCase())
-);
+  const filteredUsers = listUsers.filter((user) =>
+    (user.name || "").toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
   const indexOfLast = currentPage * itemsPerPage;
@@ -63,9 +63,10 @@ const filteredUsers = listUsers.filter((user) =>
   const handleSaveUser = async () => {
     try {
       if (editingUser) {
-        // Gọi API update user ở đây nếu có
-        // await ApiServiceAdmin.updateUser(editingUser.id, formUser);
-        setListUser(listUsers.map((u) => (u.id === editingUser.id ? { ...editingUser, ...formUser } : u)));
+        await ApiServiceAdmin.updateUser(editingUser.id, formUser);
+        // Sau khi cập nhật, reload lại danh sách
+        const res = await ApiServiceAdmin.getUsers();
+        setListUser(res);
         setToastMsg("Cập nhật người dùng thành công!");
       } else {
         // Gọi API tạo user ở đây nếu có

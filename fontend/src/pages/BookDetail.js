@@ -43,7 +43,7 @@ export default function BookDetail() {
   useEffect(() => {
     const fetchRelatedBooks = async () => {
       try {
-        const all = await ApiService.getAllBooks();
+        const all = await ApiService.getBooks();
         const related = all.filter(
           b =>
             b.id !== parseInt(id) &&
@@ -101,7 +101,7 @@ export default function BookDetail() {
       }
     } catch (err) {
       console.error("Lỗi xử lý:", err);
-      showToast("❌ Thao tác thất bại. Thử lại sau.", "danger");
+      showToast("❌ " + err.message, "danger");
     } finally {
       setShowModal(false);
     }

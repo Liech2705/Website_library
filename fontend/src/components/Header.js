@@ -88,7 +88,7 @@ export default function Header() {
     if (!value.trim()) return setSuggestions([]);
 
     try {
-      const res = await axios.get(`http://127.0.0.1:8000/api/books?search=${value}`);
+      const res = await axios.get(process.env.REACT_APP_API_URL + `/reviews_books?search=${value}`);
       setSuggestions(res.data?.slice(0, 6));
     } catch (err) {
       console.error("Gợi ý lỗi:", err);

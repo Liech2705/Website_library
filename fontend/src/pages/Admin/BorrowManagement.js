@@ -22,11 +22,7 @@ export default function BorrowManagement() {
       try {
         const res = await ApiServiceAdmin.getBorrowRecords();
         // Gán mock status để test các tab
-        const withStatus = res.map((r, i) => ({
-          ...r,
-          status: i % 3 === 0 ? "pending" : r.returned ? "returned" : "borrowing"
-        }));
-        setBorrowRecords(withStatus);
+        setBorrowRecords(res);
       } catch (error) {
         console.error("Lỗi khi tải phiếu mượn:", error);
       }
@@ -34,15 +30,26 @@ export default function BorrowManagement() {
     fetchRecords();
   }, []);
 
-  const handleApprove = (id) => {
-    setBorrowRecords((prev) =>
-      prev.map((r) => (r.id === id ? { ...r, status: "borrowing" } : r))
-    );
+  const handleApprove = async (id) => {
+    try {
+      await ApiServiceAdmin.approveBorrow(id);
+      // Sau khi duyệt, reload lại danh sách
+      const res = await ApiServiceAdmin.getBorrowRecords();
+      setBorrowRecords(res);
+    } catch (error) {
+      alert('Lỗi khi duyệt phiếu: ' + error.message);
+    }
   };
 
-  const handleReject = () => {
-    alert(`📩 Đã gửi lý do từ chối phiếu #${rejectingId}: ${rejectionReason}`);
-    setBorrowRecords((prev) => prev.filter((r) => r.id !== rejectingId));
+  const handleReject = async () => {
+    try {
+      await ApiServiceAdmin.rejectBorrow(rejectingId, rejectionReason);
+      // Sau khi từ chối, reload lại danh sách
+      const res = await ApiServiceAdmin.getBorrowRecords();
+      setBorrowRecords(res);
+    } catch (error) {
+      alert('Lỗi khi từ chối phiếu: ' + error.message);
+    }
     setShowRejectModal(false);
     setRejectionReason("");
     setRejectingId(null);
@@ -80,8 +87,8 @@ export default function BorrowManagement() {
                 {tab === "pending"
                   ? "Phiếu chờ duyệt"
                   : tab === "borrowing"
-                  ? "Phiếu đang mượn"
-                  : "Phiếu đã trả"}
+                    ? "Phiếu đang mượn"
+                    : "Phiếu đã trả"}
               </Button>
             ))}
           </div>

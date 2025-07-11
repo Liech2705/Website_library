@@ -1,39 +1,63 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Table, Button, Modal, Form, Toast } from "react-bootstrap";
 import { PencilFill, TrashFill } from "react-bootstrap-icons";
 import AdminSidebarLayout from "../../components/AdminSidebar";
 import BookTabs from "../../components/BookTabs";
 import "../style.css";
+import ApiServiceAdmin from "../../services/admin/api";
 
-const mockAuthors = [
-  { id: 1, name: "Nguyễn Nhật Ánh", address: "Nhà văn nổi tiếng với truyện tuổi học trò", status: 1 },
-  { id: 2, name: "Yuval Noah Harari", address: "Tác giả của Sapiens và Homo Deus", status: 1 },
-  { id: 3, name: "Osho", address: "Diễn giả tâm linh và triết học phương Đông", status: 0 },
-];
 
 export default function AuthorManagement() {
-  const [authors, setAuthors] = useState(mockAuthors);
+  const [authors, setAuthors] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [editingAuthor, setEditingAuthor] = useState(null);
-  const [newAuthor, setNewAuthor] = useState({ name: "", address: "", status: 1 });
+  const [newAuthor, setNewAuthor] = useState({ name: "", bio: "", status: 1 });
   const [deletingAuthorId, setDeletingAuthorId] = useState(null);
+
+  useEffect(() => {
+    const fetchAuthors = async () => {
+      try {
+        const res = await ApiServiceAdmin.getAuthors();
+        setAuthors(res);
+      } catch (err) {
+        //
+      }
+    }
+
+    fetchAuthors();
+  })
 
   const filteredAuthors = authors.filter((author) =>
     (author.name || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleSaveAuthor = () => {
+  const handleSaveAuthor = async () => {
     if (editingAuthor) {
-      setAuthors(authors.map((a) => (a.id === editingAuthor.id ? { ...editingAuthor, ...newAuthor } : a)));
+      try {
+        await ApiServiceAdmin.updateAuthor(editingAuthor.id, newAuthor);
+        // Sau khi cập nhật, reload lại danh sách
+        const res = await ApiServiceAdmin.getAuthors();
+        setAuthors(res);
+        setShowToast(true);
+      } catch (err) {
+        alert('Lỗi khi cập nhật tác giả: ' + err.message);
+      }
     } else {
-      setAuthors([...authors, { id: authors.length + 1, ...newAuthor }]);
+      try {
+        await ApiServiceAdmin.addAuthor(newAuthor);
+        // Sau khi thêm, reload lại danh sách
+        const res = await ApiServiceAdmin.getAuthors();
+        setAuthors(res);
+        setShowToast(true);
+      } catch (err) {
+        alert('Lỗi khi thêm tác giả: ' + err.message);
+      }
     }
     setShowModal(false);
-    setShowToast(true);
     setEditingAuthor(null);
-    setNewAuthor({ name: "", address: "", status: 1 });
+    setNewAuthor({ name: "", bio: "", status: 1 });
   };
 
   const handleEditClick = (author) => {
@@ -42,10 +66,17 @@ export default function AuthorManagement() {
     setShowModal(true);
   };
 
-  const handleDeleteAuthor = () => {
-    setAuthors(authors.filter((a) => a.id !== deletingAuthorId));
+  const handleDeleteAuthor = async () => {
+    try {
+      await ApiServiceAdmin.deleteAuthor(deletingAuthorId);
+      // Sau khi xóa, reload lại danh sách
+      const res = await ApiServiceAdmin.getAuthors();
+      setAuthors(res);
+      setShowToast(true);
+    } catch (err) {
+      alert('Lỗi khi xóa tác giả: ' + err.message);
+    }
     setDeletingAuthorId(null);
-    setShowToast(true);
   };
 
   return (
@@ -82,7 +113,7 @@ export default function AuthorManagement() {
               <tr key={author.id}>
                 <td>{author.id}</td>
                 <td>{author.name}</td>
-                <td>{author.address}</td>
+                <td>{author.bio}</td>
                 <td>
                   <Button variant="outline-secondary" size="sm" className="me-1" onClick={() => handleEditClick(author)}>
                     <PencilFill />
@@ -115,8 +146,8 @@ export default function AuthorManagement() {
                 <Form.Control
                   as="textarea"
                   rows={3}
-                  value={newAuthor.address}
-                  onChange={(e) => setNewAuthor({ ...newAuthor, address: e.target.value })}
+                  value={newAuthor.bio}
+                  onChange={(e) => setNewAuthor({ ...newAuthor, bio: e.target.value })}
                 />
               </Form.Group>
             </Form>

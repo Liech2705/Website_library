@@ -41,22 +41,30 @@ export default function CategoryManagement() {
 
   const handlePageChange = (page) => setCurrentPage(page);
 
-  const handleSaveCategory = () => {
+  const handleSaveCategory = async () => {
     if (editingCategory) {
-      setCategories(
-        categories.map((cat) =>
-          cat.id === editingCategory.id ? { ...editingCategory, ...newCategory } : cat
-        )
-      );
+      try {
+        await ApiServiceAdmin.updateCategory(editingCategory.id, newCategory);
+        // Sau khi cập nhật, reload lại danh sách
+        const res = await ApiServiceAdmin.getCategories();
+        setCategories(res);
+        setShowToast(true);
+      } catch (err) {
+        alert('Lỗi khi cập nhật thể loại: ' + err.message);
+      }
     } else {
-      setCategories([
-        ...categories,
-        { id: categories.length + 1, ...newCategory },
-      ]);
+      try {
+        await ApiServiceAdmin.addCategory(newCategory);
+        // Sau khi thêm, reload lại danh sách
+        const res = await ApiServiceAdmin.getCategories();
+        setCategories(res);
+        setShowToast(true);
+      } catch (err) {
+        alert('Lỗi khi thêm thể loại: ' + err.message);
+      }
     }
 
     setShowModal(false);
-    setShowToast(true);
     setNewCategory({ name: "", description: "" });
     setEditingCategory(null);
   };
@@ -67,10 +75,17 @@ export default function CategoryManagement() {
     setShowModal(true);
   };
 
-  const handleDeleteCategory = () => {
-    setCategories(categories.filter((cat) => cat.id !== deletingCategoryId));
+  const handleDeleteCategory = async () => {
+    try {
+      await ApiServiceAdmin.deleteCategory(deletingCategoryId);
+      // Sau khi xóa, reload lại danh sách
+      const res = await ApiServiceAdmin.getCategories();
+      setCategories(res);
+      setShowToast(true);
+    } catch (err) {
+      alert('Lỗi khi xóa thể loại: ' + err.message);
+    }
     setDeletingCategoryId(null);
-    setShowToast(true);
   };
 
   return (

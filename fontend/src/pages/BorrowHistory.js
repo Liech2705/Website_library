@@ -22,7 +22,7 @@ export default function BorrowHistory() {
 
   const showToast = (message, variant = "info") => {
     const audio = new Audio(notificationSound);
-    audio.play().catch(() => {});
+    audio.play().catch(() => { });
     setToast({ show: true, message, variant });
   };
 
@@ -80,23 +80,28 @@ export default function BorrowHistory() {
     setShowRenewModal(true);
   };
 
-  const handleConfirmRenew = () => {
-    const renewKey = `renewCount_${selectedRenew.id}`;
-    const currentCount = parseInt(localStorage.getItem(renewKey) || "0");
-
-    if (currentCount >= 2) {
-      showToast("❗ Bạn đã sử dụng hết số lần gia hạn.", "warning");
-    } else {
-      localStorage.setItem(renewKey, currentCount + 1);
+  const handleConfirmRenew = async () => {
+    try {
       setRenewRequests((prev) => ({ ...prev, [selectedRenew.id]: "pending" }));
+      const res = await ApiService.renewBorrowRecord(selectedRenew.id);
       showToast("✅ Gia hạn thành công. Phiếu đang chờ thủ thư duyệt.", "success");
-
-      setTimeout(() => {
-        setRenewRequests((prev) => ({ ...prev, [selectedRenew.id]: "approved" }));
-        showToast("✅ Phiếu gia hạn đã được duyệt.", "success");
-      }, 3000);
+      // Có thể cập nhật lại records nếu muốn hiển thị ngày hạn mới
+      // Hoặc gọi lại API fetchHistory() nếu cần đồng bộ dữ liệu
+    } catch (error) {
+      // Nếu API trả về lỗi, lấy message từ error hoặc response
+      let message = "❗ Gia hạn thất bại.";
+      if (error && error.response && error.response.data && error.response.data.message) {
+        message = `❗ ${error.response.data.message}`;
+      } else if (error && error.message) {
+        message = `❗ ${error.message}`;
+      }
+      showToast(message, "warning");
+      setRenewRequests((prev) => {
+        const updated = { ...prev };
+        delete updated[selectedRenew.id];
+        return updated;
+      });
     }
-
     setShowRenewModal(false);
   };
 
@@ -198,15 +203,14 @@ export default function BorrowHistory() {
                   <td>{formatDate(record.start_time)}</td>
                   <td>{formatDate(record.due_time)}</td>
                   <td>{formatDate(record.end_time)}</td>
-                  <td>  
+                  <td>
                     <span
-                      className={`badge ${
-                        renewRequests[record.id] === "pending"
+                      className={`badge ${renewRequests[record.id] === "pending"
                           ? "bg-info text-dark"
                           : record.end_time
-                          ? "bg-success"
-                          : "bg-warning text-dark"
-                      }`}
+                            ? "bg-success"
+                            : "bg-warning text-dark"
+                        }`}
                     >
                       {getStatus(record)}
                     </span>

@@ -1,24 +1,20 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Table, Button, Modal, Form, Toast } from "react-bootstrap";
 import { PencilFill, TrashFill, Plus } from "react-bootstrap-icons";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import AdminSidebarLayout from "../../components/AdminSidebar";
 import Pagination from "../../components/Pagination";
 import "../style.css";
-
-// 🔹 Mock dữ liệu bản sao
-const mockCopies = [
-  { id: 1, id_book: 1, copynumber: "COPY-1-1", year: 2020, status: "borrowed", location: "Kho sách cũ" },
-  { id: 2, id_book: 1, copynumber: "COPY-1-2", year: 2021, status: "available", location: "Kệ A1" },
-  { id: 3, id_book: 1, copynumber: "COPY-1-3", year: 2022, status: "available", location: "Kệ A1" },
-  { id: 4, id_book: 2, copynumber: "COPY-2-1", year: 2020, status: "borrowed", location: "Kho sách cũ" },
-];
+import ApiServiceAdmin from "../../services/admin/api";
 
 export default function BookCopyManagement() {
   const { bookId } = useParams();
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const title = searchParams.get('title'); 
   const navigate = useNavigate();
 
-  const [copies, setCopies] = useState(mockCopies.filter(c => c.id_book === parseInt(bookId)));
+  const [copies, setCopies] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const copiesPerPage = 5;
@@ -29,6 +25,20 @@ export default function BookCopyManagement() {
   const [newCopy, setNewCopy] = useState({ copynumber: "", year: "", status: "available", location: "" });
   const [deletingId, setDeletingId] = useState(null);
   const [showToast, setShowToast] = useState(false);
+
+  // Fetch book copies from API
+  useEffect(() => {
+    const fetchCopies = async () => {
+      try {
+        const res = await ApiServiceAdmin.getBookCopies();
+        // Lọc theo bookId nếu cần
+        setCopies(res.filter(c => (c.id_book === parseInt(bookId) || c.book_id === parseInt(bookId))));
+      } catch (err) {
+        console.log(err.message);
+      }};
+
+    fetchCopies();
+  }, [bookId]);
 
   const filtered = copies.filter(copy =>
     copy.copynumber.toLowerCase().includes(searchTerm.toLowerCase())
@@ -45,24 +55,40 @@ export default function BookCopyManagement() {
     setShowModal(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (editingCopy) {
-      setCopies(copies.map(copy =>
-        copy.id === editingCopy.id ? { ...editingCopy, ...newCopy } : copy
-      ));
+      // Update
+      try {
+        await ApiServiceAdmin.updateBookCopy(editingCopy.id, {
+          ...newCopy,
+          id_book: parseInt(bookId),
+          year: parseInt(newCopy.year)
+        });
+        // Refresh list
+        const res = await ApiServiceAdmin.getBookCopies();
+        setCopies(res.filter(c => (c.id_book === parseInt(bookId) || c.book_id === parseInt(bookId))));
+        setShowToast(true);
+      } catch (err) {
+        alert("Lỗi khi cập nhật bản sao: " + err.message);
+      }
     } else {
-      const newId = copies.length ? Math.max(...copies.map(c => c.id)) + 1 : 1;
-      setCopies([...copies, {
-        ...newCopy,
-        id: newId,
-        id_book: parseInt(bookId),
-        year: parseInt(newCopy.year)
-      }]);
+      // Add
+      try {
+        await ApiServiceAdmin.addBookCopy({
+          ...newCopy,
+          id_book: parseInt(bookId),
+          year: parseInt(newCopy.year)
+        });
+        // Refresh list
+        const res = await ApiServiceAdmin.getBookCopies();
+        setCopies(res.filter(c => (c.id_book === parseInt(bookId) || c.book_id === parseInt(bookId))));
+        setShowToast(true);
+      } catch (err) {
+        alert("Lỗi khi thêm bản sao: " + err.message);
+      }
     }
-
     setShowModal(false);
     setShowConfirmModal(false);
-    setShowToast(true);
   };
 
   const handleEdit = (copy) => {
@@ -71,16 +97,23 @@ export default function BookCopyManagement() {
     setShowModal(true);
   };
 
-  const handleDelete = () => {
-    setCopies(copies.filter(copy => copy.id !== deletingId));
+  const handleDelete = async () => {
+    try {
+      await ApiServiceAdmin.deleteBookCopy(deletingId);
+      // Refresh list
+      const res = await ApiServiceAdmin.getBookCopies();
+      setCopies(res.filter(c => (c.id_book === parseInt(bookId) || c.book_id === parseInt(bookId))));
+      setShowToast(true);
+    } catch (err) {
+      alert("Lỗi khi xóa bản sao: " + err.message);
+    }
     setDeletingId(null);
-    setShowToast(true);
   };
 
   return (
     <AdminSidebarLayout>
       <div className="bg-white p-4 rounded shadow-sm">
-        <h4 className="fw-bold mb-3">📑 Quản lý bản sao sách (ID sách: {bookId})</h4>
+        <h4 className="fw-bold mb-3">📑 Quản lý bản sao sách: {title}</h4>
 
         <div className="d-flex justify-content-between align-items-center mb-3">
           <input

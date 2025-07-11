@@ -11,9 +11,20 @@ class BookController extends Controller
 {
     use AdminActivityLogger;
 
-    public function index()
+    public function index(Request $request)
     {
-        $books = Book::with(['authors:id,name', 'category:id,name', 'bookCopies'])->get();
+        $query = Book::with(['authors:id,name', 'category:id,name', 'bookCopies']);
+
+        if ($request->has('search')) {
+            $keyword = $request->input('search');
+            $query->where('title', 'like', "%$keyword%");
+            // Nếu muốn tìm cả theo tác giả:
+            // $query->orWhereHas('authors', function($q) use ($keyword) {
+            //     $q->where('name', 'like', \"%$keyword%\");
+            // });
+        }
+
+        $books = $query->get();
 
         // Đổi tên key cho đúng format frontend nếu cần
         $books = $books->map(function ($book) {
@@ -122,6 +133,19 @@ class BookController extends Controller
         Book::destroy($id);
         $this->logDelete('Sách', $id);
         return response()->json(null, 204);
+    }
+
+    public function search(Request $request)
+    {
+        $query = Book::query();
+
+        if ($request->has('search')) {
+            $keyword = $request->input('search');
+            $query->where('title', 'like', "%$keyword%");
+            // Nếu muốn tìm cả theo tác giả, thêm join hoặc whereHas với bảng author
+        }
+
+        return $query->get();
     }
 
     public function statistics(Request $request)

@@ -2,29 +2,37 @@ import React, { useState, useEffect } from "react";
 import AdminSidebarLayout from "../../components/AdminSidebar";
 import Pagination from "../../components/Pagination";
 import "../style.css";
+import ApiServiceAdmin from "../../services/admin/api";
+import { useLocation } from "react-router-dom";
 
 export default function AdminActionHistory() {
   const [logs, setLogs] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
+  const location = useLocation();
 
   useEffect(() => {
-    // Giả lập dữ liệu log tương tác admin
-    const mockLogs = [
-      { id: 1, action: "Thêm sách 'Cấu trúc dữ liệu'", time: "2025-07-09 09:20:01" },
-      { id: 2, action: "Xóa người dùng 'Nguyễn Văn A'", time: "2025-07-09 10:05:44" },
-      { id: 3, action: "Duyệt phiếu mượn #102", time: "2025-07-09 11:22:15" },
-      { id: 4, action: "Từ chối phiếu mượn #101", time: "2025-07-09 11:30:00" },
-      { id: 5, action: "Cập nhật sách 'Tư duy nhanh và chậm'", time: "2025-07-10 08:15:30" },
-      { id: 6, action: "Thêm tài khoản admin mới", time: "2025-07-10 09:45:00" },
-      { id: 7, action: "Chỉnh sửa thông tin độc giả #45", time: "2025-07-10 10:10:22" },
-    ];
-    setLogs(mockLogs);
-  }, []);
+    const fetchLogs = async () => {
+      try {
+        let res;
+        const params = new URLSearchParams(location.search);
+        const adminId = params.get('adminId');
+        if (adminId) {
+          res = await ApiServiceAdmin.getAdminActivitiesByAdminId(adminId);
+        } else {
+          res = await ApiServiceAdmin.getAdminActivities();
+        }
+        setLogs(res.data || res);
+      } catch (err) {
+        setLogs([]);
+      }
+    };
+    fetchLogs();
+  }, [location.search]);
 
   const filteredLogs = logs.filter((log) =>
-    log.action.toLowerCase().includes(searchTerm.toLowerCase())
+    (log.description || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const totalPages = Math.ceil(filteredLogs.length / itemsPerPage);
@@ -65,8 +73,8 @@ export default function AdminActionHistory() {
               {currentLogs.map((log) => (
                 <tr key={log.id}>
                   <td>{log.id}</td>
-                  <td>{log.action}</td>
-                  <td>{log.time}</td>
+                  <td>{log.description}</td>
+                  <td>{log.created_at}</td>
                 </tr>
               ))}
             </tbody>

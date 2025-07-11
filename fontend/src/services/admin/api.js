@@ -46,6 +46,17 @@ class ApiServiceAdmin {
         }
     }
 
+    static async updateBook(id, data) {
+        try {
+            const response = await axios.put(`${API_BASE_URL}/books/${id}`, data, {
+                headers: getAuthHeaders(),
+            });
+            return handleResponse(response);
+        } catch (error) {
+            handleError(error);
+        }
+    }
+
     static async getCategories() {
         try {
             const response = await axios.get(`${API_BASE_URL}/categories`, {
@@ -61,6 +72,105 @@ class ApiServiceAdmin {
     static async getAuthors() {
         try {
             const response = await axios.get(`${API_BASE_URL}/authors`, {
+                headers: getAuthHeaders(),
+            });
+            return handleResponse(response);
+        } catch (error) {
+            handleError(error);
+        }
+    }
+
+    static async getBookCopies() {
+        try {
+            const response = await axios.get(`${API_BASE_URL}/book-copies`, {
+                headers: getAuthHeaders(),
+            });
+            return handleResponse(response);
+        } catch (error) {
+            handleError(error);
+        }
+    }
+
+    static async getBookCopy(id) {
+        try {
+            const response = await axios.get(`${API_BASE_URL}/book-copies/${id}`, {
+                headers: getAuthHeaders(),
+            });
+            return handleResponse(response);
+        } catch (error) {
+            handleError(error);
+        }
+    }
+
+    static async addBookCopy(data) {
+        try {
+            const response = await axios.post(`${API_BASE_URL}/book-copies`, data, {
+                headers: getAuthHeaders(),
+            });
+            return handleResponse(response);
+        } catch (error) {
+            handleError(error);
+        }
+    }
+
+    static async updateBookCopy(id, data) {
+        try {
+            const response = await axios.put(`${API_BASE_URL}/book-copies/${id}`, data, {
+                headers: getAuthHeaders(),
+            });
+            return handleResponse(response);
+        } catch (error) {
+            handleError(error);
+        }
+    }
+
+    static async deleteBookCopy(id) {
+        try {
+            const response = await axios.delete(`${API_BASE_URL}/book-copies/${id}`, {
+                headers: getAuthHeaders(),
+            });
+            return handleResponse(response);
+        } catch (error) {
+            handleError(error);
+        }
+    }
+
+    static async addBook(data) {
+        try {
+            const response = await axios.post(`${API_BASE_URL}/books`, data, {
+                headers: getAuthHeaders(),
+            });
+            return handleResponse(response);
+        } catch (error) {
+            handleError(error);
+        }
+    }
+
+    static async addBookAuthor(data) {
+        try {
+            const response = await axios.post(`${API_BASE_URL}/book-authors`, data, {
+                headers: getAuthHeaders(),
+            });
+            return handleResponse(response);
+        } catch (error) {
+            handleError(error);
+        }
+    }
+
+    static async getBookAuthors() {
+        try {
+            const response = await axios.get(`${API_BASE_URL}/book-authors`, {
+                headers: getAuthHeaders(),
+            });
+            return handleResponse(response);
+        } catch (error) {
+            handleError(error);
+        }
+    }
+
+    static async deleteBook(id) {
+        try {
+            const response = await axios.delete(`${API_BASE_URL}/books/${id}`, {
                 headers: getAuthHeaders(),
             });
             return handleResponse(response);
@@ -103,7 +213,128 @@ class ApiServiceAdmin {
             headers: getAuthHeaders(),
         });
         return handleResponse(response);
-      }
+    }
+
+    static async approveBorrows(id) {
+        try {
+            const response = await axios.post(`${API_BASE_URL}/book-copies/${id}/approve`, {}, {
+                headers: getAuthHeaders(),
+            });
+            return handleResponse(response);
+        } catch (error) {
+            handleError(error);
+        }
+    }
+
+    static async rejectBorrowRecords(id, reason) {
+        try {
+            const response = await axios.post(`${API_BASE_URL}/book-copies/${id}/reject`, { reason }, {
+                headers: getAuthHeaders(),
+            });
+            return handleResponse(response);
+        } catch (error) {
+            handleError(error);
+        }
+    }
+
+    static async addCategory(data) {
+        try {
+            const response = await axios.post(`${API_BASE_URL}/categories`, data, {
+                headers: getAuthHeaders(),
+            });
+            return handleResponse(response);
+        } catch (error) {
+            handleError(error);
+        }
+    }
+
+    static async updateCategory(id, data) {
+        try {
+            const response = await axios.put(`${API_BASE_URL}/categories/${id}`, data, {
+                headers: getAuthHeaders(),
+            });
+            return handleResponse(response);
+        } catch (error) {
+            handleError(error);
+        }
+    }
+
+    static async deleteCategory(id) {
+        try {
+            const response = await axios.delete(`${API_BASE_URL}/categories/${id}`, {
+                headers: getAuthHeaders(),
+            });
+            return handleResponse(response);
+        } catch (error) {
+            handleError(error);
+        }
+    }
+
+    static async addAuthor(data) {
+        try {
+            const response = await axios.post(`${API_BASE_URL}/authors`, data, {
+                headers: getAuthHeaders(),
+            });
+            return handleResponse(response);
+        } catch (error) {
+            handleError(error);
+        }
+    }
+
+    static async updateAuthor(id, data) {
+        try {
+            const response = await axios.put(`${API_BASE_URL}/authors/${id}`, data, {
+                headers: getAuthHeaders(),
+            });
+            return handleResponse(response);
+        } catch (error) {
+            handleError(error);
+        }
+    }
+
+    static async deleteAuthor(id) {
+        try {
+            const response = await axios.delete(`${API_BASE_URL}/authors/${id}`, {
+                headers: getAuthHeaders(),
+            });
+            return handleResponse(response);
+        } catch (error) {
+            handleError(error);
+        }
+    }
+
+    static async updateUser(id, data) {
+        try {
+            const response = await axios.put(`${API_BASE_URL}/users/${id}`, data, {
+                headers: getAuthHeaders(),
+            });
+            return handleResponse(response);
+        } catch (error) {
+            handleError(error);
+        }
+    }
+
+    static async getAdminActivities() {
+        try {
+            const response = await axios.get(`${API_BASE_URL}/admin-activities`, {
+                headers: getAuthHeaders(),
+            });
+            return handleResponse(response);
+        } catch (error) {
+            handleError(error);
+        }
+    }
+
+    static async getAdminActivitiesByAdminId(adminId) {
+        try {
+            const response = await axios.get(`${API_BASE_URL}/admin-activities/${adminId}`, {
+                headers: getAuthHeaders(),
+            });
+            return handleResponse(response);
+        } catch (error) {
+            handleError(error);
+        }
+    }
 }
 
-export default ApiServiceAdmin; 
+export default ApiServiceAdmin;
