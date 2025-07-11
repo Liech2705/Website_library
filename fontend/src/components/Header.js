@@ -19,17 +19,23 @@ export default function Header() {
   const [notifications, setNotifications] = useState([]);
 
   useEffect(() => {
-    const updateStatus = () => {
-      const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
-      const role = localStorage.getItem("role") || "";
-      const name = localStorage.getItem("name") || "Người dùng";
-      const avatar = localStorage.getItem("avatar") || "https://via.placeholder.com/40";
-      setAuth({ isLoggedIn, role });
-      setUserInfo({ name, avatar });
+    const fetchAvatar = async () => {
+      const userInfor = await ApiService.getMyUserInfor();
+      const updateStatus = () => {
+        const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
+        const role = localStorage.getItem("role") || "";
+        const name = localStorage.getItem("username") == 'null' ? "Người dùng" : localStorage.getItem("username");
+        const avatar = process.env.REACT_APP_STORAGE_URL + (userInfor?.avatar || "");
+        setAuth({ isLoggedIn, role });
+        setUserInfo({ name, avatar });
+      };
+      updateStatus();
+      window.addEventListener("authChanged", updateStatus);
+      // Cleanup
+      return () => window.removeEventListener("authChanged", updateStatus);
     };
-    updateStatus();
-    window.addEventListener("authChanged", updateStatus);
-    return () => window.removeEventListener("authChanged", updateStatus);
+    if(localStorage.getItem("isLoggedIn") === "true"){fetchAvatar();}
+    
   }, []);
 
   useEffect(() => {
@@ -121,7 +127,7 @@ export default function Header() {
             <button className="btn btn-outline-primary ms-2" type="submit">🔍</button>
             {suggestions.length > 0 && (
               <div className="position-absolute bg-white shadow rounded mt-5 p-2"
-                   style={{ top: "100%", left: 0, zIndex: 1000, width: "100%" }}>
+                style={{ top: "100%", left: 0, zIndex: 1000, width: "100%" }}>
                 {suggestions.map((book) => (
                   <div
                     key={book.id}
@@ -156,12 +162,12 @@ export default function Header() {
               </button>
               {showNotifications && (
                 <div className="position-absolute bg-white shadow rounded mt-2 p-3"
-                     style={{ width: "300px", right: 0, zIndex: 999 }}>
+                  style={{ width: "300px", right: 0, zIndex: 999 }}>
                   <h6 className="mb-2">🔔 Thông báo</h6>
                   {notifications.map((n) => (
                     <div key={n.id}
-                         className={`alert alert-${n.type === "success" ? "success" : "warning"} py-2 mb-2`}
-                         style={{ fontSize: "0.9rem" }}>
+                      className={`alert alert-${n.type === "success" ? "success" : "warning"} py-2 mb-2`}
+                      style={{ fontSize: "0.9rem" }}>
                       {n.message}
                     </div>
                   ))}

@@ -5,6 +5,7 @@ import notificationSound from "../assets/thongbao.wav";
 import axios from "axios";
 import ActionModal from "../components/ActionModal.js"; // ➕ Thêm modal
 import "./style.css";
+import ApiService from "../services/api.js";
 
 export default function BookCard({ book }) {
   const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
@@ -54,11 +55,11 @@ export default function BookCard({ book }) {
     }
 
     try {
-      await axios.post("http://127.0.0.1:8000/api/borrow-records", {
-        user_id: userId,
-        book_copy_id: availableCopy.id,
-      });
-
+      const data = {
+        user_id : userId,
+        id_bookcopy: availableCopy.id,
+      }
+      await ApiService.createBorrowRecord(data);
       setToast({
         show: true,
         message: "✅ Yêu cầu mượn sách đã được gửi!",
@@ -66,10 +67,10 @@ export default function BookCard({ book }) {
       });
       new Audio(notificationSound).play().catch(() => {});
     } catch (error) {
-      console.error("Lỗi mượn sách:", error.response?.data || error.message);
+      console.error("Lỗi mượn sách:", error.message || error.response?.data);
       setToast({
         show: true,
-        message: "❌ Mượn sách thất bại. Vui lòng thử lại.",
+        message: "❌ " + error.message,
         variant: "danger",
       });
     }

@@ -57,8 +57,16 @@ class ApiServiceAdmin {
         }
     }
 
+    // Author methods
     static async getAuthors() {
-        //
+        try {
+            const response = await axios.get(`${API_BASE_URL}/authors`, {
+                headers: getAuthHeaders(),
+            });
+            return handleResponse(response);
+        } catch (error) {
+            handleError(error);
+        }
     }
 
     // fontend/src/services/api.js

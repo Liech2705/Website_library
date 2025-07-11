@@ -33,7 +33,7 @@ class BookController extends Controller
                 'publisher' => $book->publisher,
                 'description' => $book->description,
                 'year' => $book->year,
-                'book_copies' => $book->bookCopies,
+                'book_copies' => $book->bookCopies->where('status', 'available')->values(),
                 'views' => $book->views,
                 'image' => $book->image,
             ];

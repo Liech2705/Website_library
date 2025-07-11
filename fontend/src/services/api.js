@@ -155,18 +155,6 @@ class ApiService {
     //     }
     // }
 
-    // Author methods
-    // static async getAuthors() {
-    //     try {
-    //         const response = await axios.get(`${API_BASE_URL}/authors`, {
-    //             headers: getAuthHeaders(),
-    //         });
-    //         return handleResponse(response);
-    //     } catch (error) {
-    //         handleError(error);
-    //     }
-    // }
-
     // Borrow record methods
     // static async getBorrowRecords() {
     //     try {
@@ -178,6 +166,29 @@ class ApiService {
     //         handleError(error);
     //     }
     // }
+
+
+    static async createBorrowRecord($data) {
+        try {
+            const response = await axios.post(`${API_BASE_URL}/borrow-records`, $data, {
+                headers: getAuthHeaders(),
+            });
+            return handleResponse(response);
+        } catch (error) {
+            handleError(error);
+        }
+    }
+
+    static async renewBorrowRecord(borrowRecordId) {
+        try {
+            const response = await axios.post(`${API_BASE_URL}/borrow-records/${borrowRecordId}/renew`, {}, {
+                headers: getAuthHeaders(),
+            });
+            return handleResponse(response);
+        } catch (error) {
+            handleError(error);
+        }
+    }
 
     // Notification methods
     static async getNotificationsByUser(userId) {

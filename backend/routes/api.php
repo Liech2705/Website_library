@@ -28,12 +28,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::apiResource('categories', CategoryController::class)->only(['index', 'show']);
     Route::apiResource('book-copies', BookCopyController::class)->only(['index', 'show']);
     Route::apiResource('book-authors', BookAuthorController::class)->only(['index', 'show']);
-    Route::apiResource('borrow-records', BorrowRecordController::class)->only(['index', 'show']);
+    Route::apiResource('borrow-records', BorrowRecordController::class)->only(['index', 'show', 'store']);
     Route::apiResource('notifications', NotificationController::class)->only(['index', 'show']);
     Route::apiResource('reservation', ReservationController::class)->only(['index', 'show']);
 
     // Các api custom ở ngoài
     Route::get('/borrow-history/{userId}', [BorrowRecordController::class, 'history']);
+    Route::post('/borrow-records/{id}/renew', [BorrowRecordController::class, 'renew']);
     Route::get('/notifications/user/{userId}', [NotificationController::class, 'getByUser']);
     Route::post('/users/avatar', [UserInforController::class, 'updateAvatar']);
     Route::post('/update-infor', [UserInforController::class, 'updateProfile']);
@@ -69,9 +70,7 @@ Route::middleware('auth:sanctum')->group(function () {
 });
 
 // Routes không cần authentication - không có middleware
-Route::get('/reviews_books', [BookController::class, '_index']);
+Route::get('/reviews_books', [BookController::class, 'index']);
 Route::get('/reviews_books/{id}', [BookController::class, 'show']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [AuthController::class, 'register']);
-
-

@@ -46,7 +46,7 @@ export default function ProfilePage() {
           email: localUser.email || "",
           role: localUser.role || "",
           status: localUser.status || "",
-          avatar: "https://yt3.ggpht.com/yti/ANjgQV-FgWf4XF8YlaoUDJNhBbH7KQ8nK9jSlWtuRle6_trGSaY=s88-c-k-c0x00ffffff-no-rj-mo",
+          avatar: "",
           phone: "",
           address: "",
           school_name: "",

@@ -19,7 +19,7 @@ export default function BookDetail() {
   const [modalType, setModalType] = useState("borrow");
 
   const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
-  const userId = localStorage.getItem("userId");
+  const userId = localStorage.getItem("user_id");
   const readerName = localStorage.getItem("username") || "Bạn đọc";
 
   const now = new Date();
@@ -57,9 +57,7 @@ export default function BookDetail() {
 
   const fullImage = book?.image_url?.startsWith("http")
     ? book.image_url
-    : book?.image_url
-    ? `http://127.0.0.1:8000${book.image_url}`
-    : null;
+    : book?.image_url;
 
   const handleConfirm = async () => {
     if (!isLoggedIn || !userId) {
@@ -83,7 +81,7 @@ export default function BookDetail() {
       }
     } catch (err) {
       console.error("Lỗi xử lý:", err);
-      showToast("❌ Thao tác thất bại. Thử lại sau.", "danger");
+      showToast("❌ " + err.message, "danger");
     } finally {
       setShowModal(false);
     }
