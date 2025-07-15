@@ -12,7 +12,7 @@ export default function RegisterForm() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const validateEmail = (email) =>
-    /^[\w-.]+@[\w-]+\.(edu\.vn)$/.test(email);
+  /^[\w-.]+@([\w-]+\.)*edu\.vn$/.test(email);
 
   const validateForm = () => {
     const errs = {};

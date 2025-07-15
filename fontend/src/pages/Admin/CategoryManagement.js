@@ -42,48 +42,45 @@ export default function CategoryManagement() {
   const handlePageChange = (page) => setCurrentPage(page);
 
   const handleSaveCategory = async () => {
-    if (editingCategory) {
-      try {
+    try {
+      if (editingCategory) {
         await ApiServiceAdmin.updateCategory(editingCategory.id, newCategory);
-        // Sau khi cập nhật, reload lại danh sách
-        const res = await ApiServiceAdmin.getCategories();
-        setCategories(res);
-        setShowToast(true);
-      } catch (err) {
-        alert('Lỗi khi cập nhật thể loại: ' + err.message);
-      }
-    } else {
-      try {
+      } else {
         await ApiServiceAdmin.addCategory(newCategory);
-        // Sau khi thêm, reload lại danh sách
-        const res = await ApiServiceAdmin.getCategories();
-        setCategories(res);
-        setShowToast(true);
-      } catch (err) {
-        alert('Lỗi khi thêm thể loại: ' + err.message);
       }
+      const res = await ApiServiceAdmin.getCategories();
+      setCategories(res);
+      setShowToast(true);
+    } catch (err) {
+      alert(
+        editingCategory
+          ? "Lỗi khi cập nhật thể loại: " + err.message
+          : "Lỗi khi thêm thể loại: " + err.message
+      );
     }
-
-    setShowModal(false);
-    setNewCategory({ name: "", description: "" });
-    setEditingCategory(null);
+    handleCloseModal();
   };
 
   const handleEditClick = (category) => {
     setEditingCategory(category);
-    setNewCategory(category);
+    setNewCategory({ name: category.name, description: category.description });
     setShowModal(true);
+  };
+
+  const handleCloseModal = () => {
+    setShowModal(false);
+    setEditingCategory(null);
+    setNewCategory({ name: "", description: "" });
   };
 
   const handleDeleteCategory = async () => {
     try {
       await ApiServiceAdmin.deleteCategory(deletingCategoryId);
-      // Sau khi xóa, reload lại danh sách
       const res = await ApiServiceAdmin.getCategories();
       setCategories(res);
       setShowToast(true);
     } catch (err) {
-      alert('Lỗi khi xóa thể loại: ' + err.message);
+      alert("Lỗi khi xóa thể loại: " + err.message);
     }
     setDeletingCategoryId(null);
   };
@@ -106,7 +103,14 @@ export default function CategoryManagement() {
               setCurrentPage(1);
             }}
           />
-          <Button variant="primary" onClick={() => setShowModal(true)}>
+          <Button
+            variant="primary"
+            onClick={() => {
+              setEditingCategory(null);
+              setNewCategory({ name: "", description: "" });
+              setShowModal(true);
+            }}
+          >
             + Thêm thể loại
           </Button>
         </div>
@@ -165,7 +169,7 @@ export default function CategoryManagement() {
         )}
 
         {/* Modal thêm/sửa */}
-        <Modal show={showModal} onHide={() => setShowModal(false)} centered>
+        <Modal show={showModal} onHide={handleCloseModal} centered>
           <Modal.Header closeButton>
             <Modal.Title>
               {editingCategory ? "✏️ Sửa thể loại" : "📁 Thêm thể loại"}
@@ -194,7 +198,7 @@ export default function CategoryManagement() {
             </Form>
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="secondary" onClick={() => setShowModal(false)}>
+            <Button variant="secondary" onClick={handleCloseModal}>
               Hủy
             </Button>
             <Button variant="success" onClick={handleSaveCategory}>

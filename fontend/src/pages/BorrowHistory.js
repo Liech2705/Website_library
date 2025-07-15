@@ -1,3 +1,4 @@
+// File: BorrowHistory.js
 import React, { useEffect, useState } from "react";
 import ToastMessage from "../components/ToastMessage";
 import notificationSound from "../assets/thongbao.wav";
@@ -22,7 +23,7 @@ export default function BorrowHistory() {
 
   const showToast = (message, variant = "info") => {
     const audio = new Audio(notificationSound);
-    audio.play().catch(() => { });
+    audio.play().catch(() => {});
     setToast({ show: true, message, variant });
   };
 
@@ -54,23 +55,21 @@ export default function BorrowHistory() {
       filtered = filtered.filter((r) => {
         const renewState = renewRequests[r.id];
         if (filterStatus === "returned") return r.end_time;
-        if (filterStatus === "borrowing") return !r.end_time && renewState !== "pending";
-        if (filterStatus === "pending") return renewState === "pending";
+        if (filterStatus === "borrowing") return !r.end_time && r.status === "approved";
+        if (filterStatus === "pending") return r.status === "pending";
         return true;
       });
     }
-
     if (filterDate) {
       filtered = filtered.filter((r) => r.start_time?.slice(0, 10) === filterDate);
     }
-
     setFilteredRecords(filtered);
     setCurrentPage(1);
   }, [filterStatus, filterDate, records, renewRequests]);
 
   const getStatus = (record) => {
-    const renewState = renewRequests[record.id];
-    if (renewState === "pending") return "Chờ duyệt";
+    if (record.status === "pending") return "Chờ duyệt mượn";
+    if (renewRequests[record.id] === "pending") return "Chờ duyệt gia hạn";
     if (record.end_time) return "Đã trả";
     return "Đang mượn";
   };
@@ -83,16 +82,13 @@ export default function BorrowHistory() {
   const handleConfirmRenew = async () => {
     try {
       setRenewRequests((prev) => ({ ...prev, [selectedRenew.id]: "pending" }));
-      const res = await ApiService.renewBorrowRecord(selectedRenew.id);
+      await ApiService.renewBorrowRecord(selectedRenew.id);
       showToast("✅ Gia hạn thành công. Phiếu đang chờ thủ thư duyệt.", "success");
-      // Có thể cập nhật lại records nếu muốn hiển thị ngày hạn mới
-      // Hoặc gọi lại API fetchHistory() nếu cần đồng bộ dữ liệu
     } catch (error) {
-      // Nếu API trả về lỗi, lấy message từ error hoặc response
       let message = "❗ Gia hạn thất bại.";
-      if (error && error.response && error.response.data && error.response.data.message) {
+      if (error?.response?.data?.message) {
         message = `❗ ${error.response.data.message}`;
-      } else if (error && error.message) {
+      } else if (error?.message) {
         message = `❗ ${error.message}`;
       }
       showToast(message, "warning");
@@ -140,46 +136,28 @@ export default function BorrowHistory() {
           />
         </div>
         <div className="col-md-3">
-          <button
-            className="btn btn-secondary w-100"
-            onClick={() => {
-              setFilterDate("");
-              setFilterStatus("all");
-            }}
-          >
+          <button className="btn btn-secondary w-100" onClick={() => { setFilterDate(""); setFilterStatus("all"); }}>
             Xóa bộ lọc
           </button>
         </div>
       </div>
 
-      {/* ✅ Modal tái sử dụng */}
       {selectedRenew && (
         <ActionModal
           show={showRenewModal}
           onClose={() => setShowRenewModal(false)}
           title="Xác nhận gia hạn sách"
-          book={{
-            ...selectedRenew,
-            image: selectedRenew.image || "https://via.placeholder.com/300x400?text=No+Image",
-          }}
+          book={{ ...selectedRenew, image: selectedRenew.image || "https://via.placeholder.com/300x400?text=No+Image" }}
           readerName={localStorage.getItem("username") || "Bạn đọc"}
           createdAt={new Date()}
-          dueDate={
-            new Date(
-              new Date(selectedRenew.due_time).setDate(
-                new Date(selectedRenew.due_time).getDate() + 7
-              )
-            )
-          }
+          dueDate={new Date(new Date(selectedRenew.due_time).setDate(new Date(selectedRenew.due_time).getDate() + 7))}
           onConfirm={handleConfirmRenew}
         />
       )}
 
       {filteredRecords.length === 0 ? (
         <div className="alert alert-info">
-          {records.length === 0
-            ? "Bạn chưa mượn sách nào."
-            : "Không có kết quả phù hợp với bộ lọc."}
+          {records.length === 0 ? "Bạn chưa mượn sách nào." : "Không có kết quả phù hợp với bộ lọc."}
         </div>
       ) : (
         <div className="table-responsive">
@@ -205,22 +183,22 @@ export default function BorrowHistory() {
                   <td>{formatDate(record.end_time)}</td>
                   <td>
                     <span
-                      className={`badge ${renewRequests[record.id] === "pending"
+                      className={`badge ${
+                        record.status === "pending"
+                          ? "bg-secondary"
+                          : renewRequests[record.id] === "pending"
                           ? "bg-info text-dark"
                           : record.end_time
-                            ? "bg-success"
-                            : "bg-warning text-dark"
-                        }`}
+                          ? "bg-success"
+                          : "bg-warning text-dark"
+                      }`}
                     >
                       {getStatus(record)}
                     </span>
                   </td>
                   <td>
-                    {!record.end_time && !renewRequests[record.id] && (
-                      <button
-                        className="btn btn-sm btn-outline-primary"
-                        onClick={() => handleRenewClick(record)}
-                      >
+                    {!record.end_time && record.status !== "pending" && !renewRequests[record.id] && (
+                      <button className="btn btn-sm btn-outline-primary" onClick={() => handleRenewClick(record)}>
                         Gia hạn
                       </button>
                     )}
@@ -235,28 +213,19 @@ export default function BorrowHistory() {
               <nav>
                 <ul className="pagination">
                   <li className={`page-item ${currentPage === 1 ? "disabled" : ""}`}>
-                    <button
-                      className="page-link"
-                      onClick={() => setCurrentPage(currentPage - 1)}
-                    >
+                    <button className="page-link" onClick={() => setCurrentPage(currentPage - 1)}>
                       Back
                     </button>
                   </li>
                   {[...Array(totalPages)].map((_, i) => (
-                    <li
-                      key={i}
-                      className={`page-item ${currentPage === i + 1 ? "active" : ""}`}
-                    >
+                    <li key={i} className={`page-item ${currentPage === i + 1 ? "active" : ""}`}>
                       <button className="page-link" onClick={() => setCurrentPage(i + 1)}>
                         {i + 1}
                       </button>
                     </li>
                   ))}
                   <li className={`page-item ${currentPage === totalPages ? "disabled" : ""}`}>
-                    <button
-                      className="page-link"
-                      onClick={() => setCurrentPage(currentPage + 1)}
-                    >
+                    <button className="page-link" onClick={() => setCurrentPage(currentPage + 1)}>
                       Next
                     </button>
                   </li>

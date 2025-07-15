@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { Button, Modal, Form } from "react-bootstrap";
-import { TrashFill } from "react-bootstrap-icons";
 import AdminSidebarLayout from "../../components/AdminSidebar";
 import Pagination from "../../components/Pagination";
 import ApiServiceAdmin from "../../services/admin/api";
@@ -11,9 +10,22 @@ export default function BorrowManagement() {
   const [selectedTab, setSelectedTab] = useState("pending");
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [rejectionReason, setRejectionReason] = useState("");
   const [rejectingId, setRejectingId] = useState(null);
+
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [books, setBooks] = useState([]);
+  const [newBorrow, setNewBorrow] = useState({
+    reader: "",
+    bookTitle: "",
+    publisher: "",
+    publishYear: "",
+    borrowDate: new Date().toISOString().split("T")[0],
+    dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+    note: "",
+  });
 
   const itemsPerPage = 10;
 
@@ -21,19 +33,28 @@ export default function BorrowManagement() {
     const fetchRecords = async () => {
       try {
         const res = await ApiServiceAdmin.getBorrowRecords();
-        // Gán mock status để test các tab
         setBorrowRecords(res);
       } catch (error) {
         console.error("Lỗi khi tải phiếu mượn:", error);
       }
     };
+
+    const fetchBooks = async () => {
+      try {
+        const res = await ApiServiceAdmin.getAllBooks();
+        setBooks(res);
+      } catch (error) {
+        console.error("Lỗi khi tải danh sách sách:", error);
+      }
+    };
+
     fetchRecords();
+    fetchBooks();
   }, []);
 
   const handleApprove = async (id) => {
     try {
       await ApiServiceAdmin.approveBorrow(id);
-      // Sau khi duyệt, reload lại danh sách
       const res = await ApiServiceAdmin.getBorrowRecords();
       setBorrowRecords(res);
     } catch (error) {
@@ -44,7 +65,6 @@ export default function BorrowManagement() {
   const handleReject = async () => {
     try {
       await ApiServiceAdmin.rejectBorrow(rejectingId, rejectionReason);
-      // Sau khi từ chối, reload lại danh sách
       const res = await ApiServiceAdmin.getBorrowRecords();
       setBorrowRecords(res);
     } catch (error) {
@@ -53,6 +73,26 @@ export default function BorrowManagement() {
     setShowRejectModal(false);
     setRejectionReason("");
     setRejectingId(null);
+  };
+
+  const handleCreateBorrow = async () => {
+    try {
+      await ApiServiceAdmin.createBorrowRecord(newBorrow);
+      const res = await ApiServiceAdmin.getBorrowRecords();
+      setBorrowRecords(res);
+      setShowCreateModal(false);
+      setNewBorrow({
+        reader: "",
+        bookTitle: "",
+        publisher: "",
+        publishYear: "",
+        borrowDate: new Date().toISOString().split("T")[0],
+        dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
+        note: "",
+      });
+    } catch (error) {
+      alert("Lỗi khi tạo phiếu mượn: " + error.message);
+    }
   };
 
   const filteredByTab = borrowRecords.filter((r) => r.status === selectedTab);
@@ -67,6 +107,32 @@ export default function BorrowManagement() {
   const currentRecords = filteredRecords.slice(indexOfFirst, indexOfLast);
 
   const handlePageChange = (page) => setCurrentPage(page);
+
+  const handleBookTitleChange = (title) => {
+    const found = books.find((b) => b.title === title);
+    if (found) {
+      setNewBorrow({
+        ...newBorrow,
+        bookTitle: found.title,
+        publisher: found.publisher,
+        publishYear: found.publishYear || "",
+      });
+    } else {
+      setNewBorrow({ ...newBorrow, bookTitle: title });
+    }
+  };
+
+  const formatOverdueTime = (dueDateStr) => {
+    const dueDate = new Date(dueDateStr);
+    dueDate.setHours(23, 0, 0, 0);
+    const now = new Date();
+    if (now <= dueDate) return "-";
+    const diffMs = now - dueDate;
+    const totalHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const days = Math.floor(totalHours / 24);
+    const hours = totalHours % 24;
+    return days > 0 ? `${days} ngày ${hours}h` : `${hours}h`;
+  };
 
   return (
     <AdminSidebarLayout>
@@ -87,12 +153,14 @@ export default function BorrowManagement() {
                 {tab === "pending"
                   ? "Phiếu chờ duyệt"
                   : tab === "borrowing"
-                    ? "Phiếu đang mượn"
-                    : "Phiếu đã trả"}
+                  ? "Phiếu đang mượn"
+                  : "Phiếu đã trả"}
               </Button>
             ))}
           </div>
-          <Button variant="success">+ Lập phiếu mượn</Button>
+          <Button variant="success" onClick={() => setShowCreateModal(true)}>
+            + Lập phiếu mượn
+          </Button>
         </div>
 
         {/* Search */}
@@ -120,6 +188,7 @@ export default function BorrowManagement() {
                 <th>Số lượng mượn</th>
                 <th>Ngày tạo phiếu</th>
                 <th>Ngày hẹn trả</th>
+                <th>Ngày quá hạn</th>
                 <th>Ghi chú mượn</th>
                 <th>Hành động</th>
               </tr>
@@ -133,6 +202,7 @@ export default function BorrowManagement() {
                   <td>{r.quantity}</td>
                   <td>{new Date(r.borrowDate).toLocaleString()}</td>
                   <td>{new Date(r.dueDate).toLocaleString()}</td>
+                  <td>{r.status === "borrowing" ? formatOverdueTime(r.dueDate) : "-"}</td>
                   <td>{r.note}</td>
                   <td>
                     {selectedTab === "pending" ? (
@@ -186,7 +256,7 @@ export default function BorrowManagement() {
         )}
       </div>
 
-      {/* Modal nhập lý do từ chối */}
+      {/* Modal từ chối */}
       <Modal show={showRejectModal} onHide={() => setShowRejectModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Lý do từ chối</Modal.Title>
@@ -209,6 +279,73 @@ export default function BorrowManagement() {
           </Button>
         </Modal.Footer>
       </Modal>
+
+     {/* Modal lập phiếu mượn */}
+      <Modal show={showCreateModal} onHide={() => setShowCreateModal(false)}>
+        <Modal.Header closeButton>
+          <Modal.Title>Lập phiếu mượn mới</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          <Form>
+            <Form.Group className="mb-3">
+              <Form.Label>Tên độc giả</Form.Label>
+              <Form.Control
+                type="text"
+                value={newBorrow.reader}
+                onChange={(e) => setNewBorrow({ ...newBorrow, reader: e.target.value })}
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Tên sách</Form.Label>
+              <Form.Control
+                list="book-options"
+                type="text"
+                value={newBorrow.bookTitle}
+                onChange={(e) => handleBookTitleChange(e.target.value)}
+              />
+              <datalist id="book-options">
+                {books.map((b, i) => (
+                  <option key={i} value={b.title} />
+                ))}
+              </datalist>
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Nhà xuất bản</Form.Label>
+              <Form.Control
+                type="text"
+                value={newBorrow.publisher}
+                disabled
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Ngày tạo phiếu</Form.Label>
+              <Form.Control type="date" value={newBorrow.borrowDate} disabled />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Ngày hẹn trả</Form.Label>
+              <Form.Control type="date" value={newBorrow.dueDate} disabled />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Ghi chú</Form.Label>
+              <Form.Control
+                as="textarea"
+                rows={2}
+                value={newBorrow.note}
+                onChange={(e) => setNewBorrow({ ...newBorrow, note: e.target.value })}
+              />
+            </Form.Group>
+          </Form>
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="secondary" onClick={() => setShowCreateModal(false)}>
+            Hủy
+          </Button>
+          <Button variant="primary" onClick={handleCreateBorrow}>
+            Tạo phiếu
+          </Button>
+        </Modal.Footer>
+      </Modal>
     </AdminSidebarLayout>
   );
 }
+

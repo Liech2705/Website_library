@@ -1,6 +1,16 @@
 import React, { useEffect, useState } from "react";
-import { Table, Button, Modal, Form, Toast, Spinner } from "react-bootstrap";
-import { PencilFill, TrashFill, InfoCircleFill } from "react-bootstrap-icons";
+import {
+  Table,
+  Button,
+  Modal,
+  Form,
+  Toast,
+  Spinner,
+  InputGroup,
+  Tabs,
+  Tab,
+} from "react-bootstrap";
+import { EyeFill, EyeSlashFill } from "react-bootstrap-icons";
 import AdminSidebarLayout from "../../components/AdminSidebar";
 import Pagination from "../../components/Pagination";
 import "../style.css";
@@ -14,14 +24,20 @@ export default function UsersManagement() {
   const [currentPage, setCurrentPage] = useState(1);
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
-  const [formUser, setFormUser] = useState({ name: "", email: "", infor: { school_name: "", phone: "", address: "" } });
-  const [deletingUserId, setDeletingUserId] = useState(null);
+  const [formUser, setFormUser] = useState({
+    name: "",
+    email: "",
+    password: "",
+    infor: { school_name: "", phone: "", address: "" },
+  });
   const [showToast, setShowToast] = useState(false);
   const [toastMsg, setToastMsg] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [selectedTab, setSelectedTab] = useState("active");
+
   const itemsPerPage = 10;
 
-  // Fetch users from API
   useEffect(() => {
     const fetchUsers = async () => {
       setLoading(true);
@@ -39,41 +55,51 @@ export default function UsersManagement() {
   }, []);
 
   useEffect(() => {
-    listUsers.forEach(user => {
+    listUsers.forEach((user) => {
       if (!userInfors[user.id]) {
-        ApiService.getUserInforById(user.id).then(infor => {
-          setUserInfors(prev => ({ ...prev, [user.id]: infor }));
+        ApiService.getUserInforById(user.id).then((infor) => {
+          setUserInfors((prev) => ({ ...prev, [user.id]: infor }));
         });
       }
     });
   }, [listUsers]);
 
+  const isUserLocked = (user) =>
+    user.lock_until && new Date(user.lock_until) > new Date();
+
   const filteredUsers = listUsers.filter((user) =>
     (user.name || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+  const displayedUsers = filteredUsers.filter((user) =>
+    selectedTab === "active" ? !isUserLocked(user) : isUserLocked(user)
+  );
+
+  const totalPages = Math.ceil(displayedUsers.length / itemsPerPage);
   const indexOfLast = currentPage * itemsPerPage;
   const indexOfFirst = indexOfLast - itemsPerPage;
-  const currentUsers = filteredUsers.slice(indexOfFirst, indexOfLast);
+  const currentUsers = displayedUsers.slice(indexOfFirst, indexOfLast);
 
-  // Handlers
   const handlePageChange = (page) => setCurrentPage(page);
 
   const handleSaveUser = async () => {
     try {
       if (editingUser) {
         await ApiServiceAdmin.updateUser(editingUser.id, formUser);
-        // Sau khi cập nhật, reload lại danh sách
         const res = await ApiServiceAdmin.getUsers();
         setListUser(res);
         setToastMsg("Cập nhật người dùng thành công!");
       } else {
-        // Gọi API tạo user ở đây nếu có
-        // const newUser = await ApiServiceAdmin.createUser(formUser);
         setListUser([
           ...listUsers,
-          { id: listUsers.length + 1, role: 0, status: 1, lock_until: null, id_infor: 100 + listUsers.length + 1, ...formUser },
+          {
+            id: listUsers.length + 1,
+            role: 0,
+            status: 1,
+            lock_until: null,
+            id_infor: 100 + listUsers.length + 1,
+            ...formUser,
+          },
         ]);
         setToastMsg("Thêm người dùng thành công!");
       }
@@ -82,27 +108,47 @@ export default function UsersManagement() {
     }
     setShowModal(false);
     setShowToast(true);
-    setFormUser({ name: "", email: "", infor: { school_name: "", phone: "", address: "" } });
+    setFormUser({
+      name: "",
+      email: "",
+      password: "",
+      infor: { school_name: "", phone: "", address: "" },
+    });
     setEditingUser(null);
   };
 
   const handleEditClick = (user) => {
     setEditingUser(user);
-    setFormUser({ ...user, infor: user.infor || { school_name: "", phone: "", address: "" } });
+    setFormUser({
+      ...user,
+      password: "",
+      infor: user.infor || {
+        school_name: "",
+        phone: "",
+        address: "",
+      },
+    });
     setShowModal(true);
   };
 
-  const handleDeleteUser = async () => {
+  const handleToggleLock = async (user) => {
     try {
-      // Gọi API xóa user ở đây nếu có
-      // await ApiServiceAdmin.deleteUser(deletingUserId);
-      setListUser(listUsers.filter((u) => u.id !== deletingUserId));
-      setToastMsg("Xóa người dùng thành công!");
-    } catch (error) {
-      setToastMsg("Lỗi khi xóa người dùng!");
+      const isLocked = isUserLocked(user);
+      const updatedUser = {
+        ...user,
+        lock_until: isLocked
+          ? null
+          : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+      };
+      await ApiServiceAdmin.updateUser(user.id, updatedUser);
+      const res = await ApiServiceAdmin.getUsers();
+      setListUser(res);
+      setToastMsg(isLocked ? "Đã mở khóa tài khoản!" : "Đã khóa tài khoản!");
+      setShowToast(true);
+    } catch (err) {
+      setToastMsg("Lỗi khi cập nhật trạng thái!");
+      setShowToast(true);
     }
-    setDeletingUserId(null);
-    setShowToast(true);
   };
 
   return (
@@ -110,10 +156,34 @@ export default function UsersManagement() {
       <div className="bg-white p-4 rounded shadow-sm">
         <div className="d-flex justify-content-between align-items-center mb-3">
           <h4 className="fw-bold">👤 Quản lý người dùng</h4>
-          <Button variant="primary" onClick={() => { setShowModal(true); setEditingUser(null); setFormUser({ name: "", email: "", infor: { school_name: "", phone: "", address: "" } }); }}>
+          <Button
+            variant="primary"
+            onClick={() => {
+              setShowModal(true);
+              setEditingUser(null);
+              setFormUser({
+                name: "",
+                email: "",
+                password: "",
+                infor: { school_name: "", phone: "", address: "" },
+              });
+            }}
+          >
             + Thêm người dùng
           </Button>
         </div>
+
+         <Tabs
+          activeKey={selectedTab}
+          onSelect={(k) => {
+            setSelectedTab(k);
+            setCurrentPage(1);
+          }}
+          className="mb-3"
+        >
+          <Tab eventKey="active" title="Tài khoản đang hoạt động" />
+          <Tab eventKey="locked" title="Tài khoản bị khóa" />
+        </Tabs>
 
         <div className="d-flex justify-content-between align-items-center mb-3">
           <input
@@ -143,26 +213,38 @@ export default function UsersManagement() {
                   <th>Trường</th>
                   <th>Số điện thoại</th>
                   <th>Địa chỉ</th>
+                  <th>Trạng thái</th>
                   <th>Hành động</th>
                 </tr>
               </thead>
               <tbody>
-                {listUsers.map((user, index) => {
+                {currentUsers.map((user, index) => {
                   const infor = userInfors[user.id] || {};
+                  const isLocked = isUserLocked(user);
                   return (
                     <tr key={user.id}>
-                      <td>{index + 1}</td>
+                      <td>{indexOfFirst + index + 1}</td>
                       <td>{user.name}</td>
                       <td>{user.email}</td>
                       <td>{infor.school_name || "—"}</td>
                       <td>{infor.phone || "—"}</td>
                       <td>{infor.address || "—"}</td>
                       <td>
-                        <Button variant="outline-secondary" size="sm" className="me-1" onClick={() => handleEditClick(user)}>
-                          <PencilFill />
-                        </Button>
-                        <Button variant="outline-info" size="sm">
-                          <InfoCircleFill />
+                        <span
+                          className={`badge ${
+                            isLocked ? "bg-secondary" : "bg-success"
+                          }`}
+                        >
+                          {isLocked ? "Bị khóa" : "Đang hoạt động"}
+                        </span>
+                      </td>
+                      <td>
+                        <Button
+                          variant={isLocked ? "outline-success" : "outline-danger"}
+                          size="sm"
+                          onClick={() => handleToggleLock(user)}
+                        >
+                          {isLocked ? "Mở khóa" : "Khóa"}
                         </Button>
                       </td>
                     </tr>
@@ -183,10 +265,11 @@ export default function UsersManagement() {
           </div>
         )}
 
-        {/* Modal thêm/sửa */}
         <Modal show={showModal} onHide={() => setShowModal(false)} centered>
           <Modal.Header closeButton>
-            <Modal.Title>{editingUser ? "✏️ Sửa người dùng" : "👤 Thêm người dùng"}</Modal.Title>
+            <Modal.Title>
+              {editingUser ? "✏️ Sửa người dùng" : "👤 Thêm người dùng"}
+            </Modal.Title>
           </Modal.Header>
           <Modal.Body>
             <Form>
@@ -194,7 +277,9 @@ export default function UsersManagement() {
                 <Form.Label>Họ tên</Form.Label>
                 <Form.Control
                   value={formUser.name}
-                  onChange={(e) => setFormUser({ ...formUser, name: e.target.value })}
+                  onChange={(e) =>
+                    setFormUser({ ...formUser, name: e.target.value })
+                  }
                 />
               </Form.Group>
               <Form.Group className="mb-2">
@@ -202,28 +287,65 @@ export default function UsersManagement() {
                 <Form.Control
                   type="email"
                   value={formUser.email}
-                  onChange={(e) => setFormUser({ ...formUser, email: e.target.value })}
+                  onChange={(e) =>
+                    setFormUser({ ...formUser, email: e.target.value })
+                  }
                 />
               </Form.Group>
+              {!editingUser && (
+                <Form.Group className="mb-2">
+                  <Form.Label>Mật khẩu</Form.Label>
+                  <InputGroup>
+                    <Form.Control
+                      type={showPassword ? "text" : "password"}
+                      value={formUser.password}
+                      onChange={(e) =>
+                        setFormUser({ ...formUser, password: e.target.value })
+                      }
+                    />
+                    <Button
+                      variant="outline-secondary"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? <EyeSlashFill /> : <EyeFill />}
+                    </Button>
+                  </InputGroup>
+                </Form.Group>
+              )}
               <Form.Group className="mb-2">
                 <Form.Label>Trường</Form.Label>
                 <Form.Control
                   value={formUser.infor.school_name}
-                  onChange={(e) => setFormUser({ ...formUser, infor: { ...formUser.infor, school_name: e.target.value } })}
+                  onChange={(e) =>
+                    setFormUser({
+                      ...formUser,
+                      infor: { ...formUser.infor, school_name: e.target.value },
+                    })
+                  }
                 />
               </Form.Group>
               <Form.Group className="mb-2">
                 <Form.Label>Số điện thoại</Form.Label>
                 <Form.Control
                   value={formUser.infor.phone}
-                  onChange={(e) => setFormUser({ ...formUser, infor: { ...formUser.infor, phone: e.target.value } })}
+                  onChange={(e) =>
+                    setFormUser({
+                      ...formUser,
+                      infor: { ...formUser.infor, phone: e.target.value },
+                    })
+                  }
                 />
               </Form.Group>
               <Form.Group className="mb-2">
                 <Form.Label>Địa chỉ</Form.Label>
                 <Form.Control
                   value={formUser.infor.address}
-                  onChange={(e) => setFormUser({ ...formUser, infor: { ...formUser.infor, address: e.target.value } })}
+                  onChange={(e) =>
+                    setFormUser({
+                      ...formUser,
+                      infor: { ...formUser.infor, address: e.target.value },
+                    })
+                  }
                 />
               </Form.Group>
             </Form>
@@ -238,7 +360,6 @@ export default function UsersManagement() {
           </Modal.Footer>
         </Modal>
 
-        {/* Toast thông báo */}
         <Toast
           show={showToast}
           onClose={() => setShowToast(false)}
@@ -249,9 +370,7 @@ export default function UsersManagement() {
           <Toast.Header>
             <strong className="me-auto">Thông báo</strong>
           </Toast.Header>
-          <Toast.Body>
-            ✅ {toastMsg}
-          </Toast.Body>
+          <Toast.Body>✅ {toastMsg}</Toast.Body>
         </Toast>
       </div>
     </AdminSidebarLayout>

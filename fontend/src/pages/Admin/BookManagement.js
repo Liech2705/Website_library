@@ -36,6 +36,22 @@ export default function BookManagement() {
   const [editingBook, setEditingBook] = useState(null);
   const [deletingBookId, setDeletingBookId] = useState(null);
 
+  const resetNewBook = () => ({
+    title: "",
+    author: "",
+    category: "",
+    publisher: "",
+    description: "",
+    year: "",
+    image: "",
+  });
+
+  const handleCloseAddModal = () => {
+    setShowAddModal(false);
+    setEditingBook(null);
+    setNewBook(resetNewBook());
+  };
+
   useEffect(() => {
     const fetchBooks = async () => {
       try {
@@ -89,7 +105,6 @@ export default function BookManagement() {
     fetchBookAuthors();
   }, []);
 
-
   const navigate = useNavigate();
 
   const filteredBooks = books.filter((book) =>
@@ -105,7 +120,6 @@ export default function BookManagement() {
 
   const handleAddBook = async () => {
     if (editingBook) {
-      // Gửi lên API cập nhật sách với id_category và id_author là số
       try {
         await ApiServiceAdmin.updateBook(editingBook.id, {
           title: newBook.title,
@@ -116,16 +130,14 @@ export default function BookManagement() {
           year: newBook.year,
           image: newBook.image,
         });
-        // Sau khi sửa, reload lại danh sách
         const res = await ApiService.getBooks();
         setBooks(res);
         setShowToast(true);
       } catch (err) {
-        alert('Lỗi khi chỉnh sửa sách: ' + err.message);
+        alert("Lỗi khi chỉnh sửa sách: " + err.message);
       }
     } else {
       try {
-        // 1. Thêm sách
         const bookRes = await ApiServiceAdmin.addBook({
           title: newBook.title,
           id_category: newBook.category,
@@ -134,36 +146,25 @@ export default function BookManagement() {
           year: newBook.year,
           image: newBook.image,
         });
-        // 2. Thêm liên kết tác giả
         if (bookRes && newBook.author) {
           await ApiServiceAdmin.addBookAuthor({
             id_book: bookRes.id,
             id_author: newBook.author,
           });
         }
-        // Sau khi thêm, reload lại danh sách
         const res = await ApiService.getBooks();
         setBooks(res);
-        // Reload lại bookAuthors để hiển thị tác giả
         const bookAuthorRes = await ApiServiceAdmin.getBookAuthors();
         setBookAuthors(bookAuthorRes);
         setShowToast(true);
       } catch (err) {
-        alert('Lỗi khi thêm sách: ' + err.message);
+        alert("Lỗi khi thêm sách: " + err.message);
       }
     }
 
     setShowAddModal(false);
     setShowConfirmModal(false);
-    setNewBook({
-      title: "",
-      author: "",
-      category: "",
-      publisher: "",
-      description: "",
-      year: "",
-      image: "",
-    });
+    setNewBook(resetNewBook());
     setEditingBook(null);
   };
 
@@ -176,12 +177,11 @@ export default function BookManagement() {
   const handleDeleteBook = async () => {
     try {
       await ApiServiceAdmin.deleteBook(deletingBookId);
-      // Sau khi xóa, reload lại danh sách
       const res = await ApiService.getBooks();
       setBooks(res);
       setShowToast(true);
     } catch (err) {
-      alert('Lỗi khi xóa sách: ' + err.message);
+      alert("Lỗi khi xóa sách: " + err.message);
     }
     setDeletingBookId(null);
   };
@@ -204,7 +204,14 @@ export default function BookManagement() {
               setCurrentPage(1);
             }}
           />
-          <Button variant="primary" onClick={() => setShowAddModal(true)}>
+          <Button
+            variant="primary"
+            onClick={() => {
+              setEditingBook(null);
+              setNewBook(resetNewBook());
+              setShowAddModal(true);
+            }}
+          >
             + Thêm sách
           </Button>
         </div>
@@ -228,16 +235,17 @@ export default function BookManagement() {
             <tbody>
               {currentBooks.map((book, index) => {
                 const isAvailable = bookcopies.some(
-                  (copy) => (copy.id_book === book.id || copy.book_id === book.id) && copy.status === "available"
+                  (copy) =>
+                    (copy.id_book === book.id || copy.book_id === book.id) &&
+                    copy.status === "available"
                 );
-                // Lấy tên tác giả từ bookAuthors và authors
                 const authorIds = bookAuthors
                   .filter((ba) => ba.id_book === book.id)
                   .map((ba) => ba.id_author);
                 const authorNames = authors
                   .filter((a) => authorIds.includes(a.id))
                   .map((a) => a.name)
-                  .join(', ');
+                  .join(", ");
 
                 return (
                   <tr key={book.id}>
@@ -246,12 +254,20 @@ export default function BookManagement() {
                       <img
                         src={book.image}
                         alt="Bìa"
-                        style={{ width: "50px", height: "70px", objectFit: "cover" }}
+                        style={{
+                          width: "50px",
+                          height: "70px",
+                          objectFit: "cover",
+                        }}
                       />
                     </td>
                     <td>{book.title}</td>
                     <td>{authorNames}</td>
-                    <td>{typeof book.category === 'object' ? book.category.name : book.category}</td>
+                    <td>
+                      {typeof book.category === "object"
+                        ? book.category.name
+                        : book.category}
+                    </td>
                     <td>{book.publisher}</td>
                     <td>{book.description}</td>
                     <td>{book.year}</td>
@@ -282,7 +298,13 @@ export default function BookManagement() {
                       <Button
                         variant="outline-info"
                         size="sm"
-                        onClick={() => navigate(`/admin/books/${book.id}/copies?title=${encodeURIComponent(book.title)}`)}
+                        onClick={() =>
+                          navigate(
+                            `/admin/books/${book.id}/copies?title=${encodeURIComponent(
+                              book.title
+                            )}`
+                          )
+                        }
                       >
                         <InfoCircleFill />
                       </Button>
@@ -296,14 +318,20 @@ export default function BookManagement() {
 
         {totalPages > 1 && (
           <div className="mt-3 d-flex justify-content-center">
-            <Pagination currentPage={currentPage} totalPages={totalPages} onPageChange={handlePageChange} />
+            <Pagination
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
           </div>
         )}
 
         {/* Modal thêm/sửa */}
-        <Modal show={showAddModal} onHide={() => setShowAddModal(false)} centered>
+        <Modal show={showAddModal} onHide={handleCloseAddModal} centered>
           <Modal.Header closeButton>
-            <Modal.Title>{editingBook ? "✏️ Chỉnh sửa sách" : "📖 Thêm sách mới"}</Modal.Title>
+            <Modal.Title>
+              {editingBook ? "✏️ Chỉnh sửa sách" : "📖 Thêm sách mới"}
+            </Modal.Title>
           </Modal.Header>
           <Modal.Body>
             <Form>
@@ -311,19 +339,26 @@ export default function BookManagement() {
                 <Form.Label>Tên sách</Form.Label>
                 <Form.Control
                   value={newBook.title}
-                  onChange={(e) => setNewBook({ ...newBook, title: e.target.value })}
+                  onChange={(e) =>
+                    setNewBook({ ...newBook, title: e.target.value })
+                  }
                 />
               </Form.Group>
               <Form.Group className="mb-2">
                 <Form.Label>Tác giả</Form.Label>
                 <Form.Select
                   value={newBook.author}
-                  onChange={(e) => setNewBook({ ...newBook, author: Number(e.target.value) })}
+                  onChange={(e) =>
+                    setNewBook({
+                      ...newBook,
+                      author: Number(e.target.value),
+                    })
+                  }
                 >
                   <option value="">-- Chọn tác giả --</option>
                   {authors.map((author, idx) => (
-                    <option key={idx} value={typeof author === 'object' ? author.id : author}>
-                      {typeof author === 'object' ? author.name : author}
+                    <option key={idx} value={author.id}>
+                      {author.name}
                     </option>
                   ))}
                 </Form.Select>
@@ -332,12 +367,17 @@ export default function BookManagement() {
                 <Form.Label>Thể loại</Form.Label>
                 <Form.Select
                   value={newBook.category}
-                  onChange={(e) => setNewBook({ ...newBook, category: Number(e.target.value) })}
+                  onChange={(e) =>
+                    setNewBook({
+                      ...newBook,
+                      category: Number(e.target.value),
+                    })
+                  }
                 >
                   <option value="">-- Chọn thể loại --</option>
                   {categories.map((cat, idx) => (
-                    <option key={idx} value={typeof cat === 'object' ? cat.id : cat}>
-                      {typeof cat === 'object' ? cat.name : cat}
+                    <option key={idx} value={cat.id}>
+                      {cat.name}
                     </option>
                   ))}
                 </Form.Select>
@@ -347,7 +387,9 @@ export default function BookManagement() {
                 <Form.Control
                   list="publisherList"
                   value={newBook.publisher}
-                  onChange={(e) => setNewBook({ ...newBook, publisher: e.target.value })}
+                  onChange={(e) =>
+                    setNewBook({ ...newBook, publisher: e.target.value })
+                  }
                   placeholder="Nhập hoặc chọn nhà xuất bản"
                 />
                 <datalist id="publisherList">
@@ -362,7 +404,9 @@ export default function BookManagement() {
                   as="textarea"
                   rows={3}
                   value={newBook.description}
-                  onChange={(e) => setNewBook({ ...newBook, description: e.target.value })}
+                  onChange={(e) =>
+                    setNewBook({ ...newBook, description: e.target.value })
+                  }
                 />
               </Form.Group>
               <Form.Group className="mb-2">
@@ -370,32 +414,49 @@ export default function BookManagement() {
                 <Form.Control
                   type="number"
                   value={newBook.year}
-                  onChange={(e) => setNewBook({ ...newBook, year: e.target.value })}
+                  onChange={(e) =>
+                    setNewBook({ ...newBook, year: e.target.value })
+                  }
                 />
               </Form.Group>
               <Form.Group className="mb-2">
                 <Form.Label>Ảnh sách (URL)</Form.Label>
                 <Form.Control
                   value={newBook.image}
-                  onChange={(e) => setNewBook({ ...newBook, image: e.target.value })}
+                  onChange={(e) =>
+                    setNewBook({ ...newBook, image: e.target.value })
+                  }
                   placeholder="https://..."
                 />
               </Form.Group>
             </Form>
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="secondary" onClick={() => setShowAddModal(false)}>Đóng</Button>
-            <Button variant="success" onClick={() => {
-              setShowAddModal(false);
-              setShowConfirmModal(true);
-            }}>{editingBook ? "Lưu thay đổi" : "Thêm"}</Button>
+            <Button variant="secondary" onClick={handleCloseAddModal}>
+              Đóng
+            </Button>
+            <Button
+              variant="success"
+              onClick={() => {
+                setShowAddModal(false);
+                setShowConfirmModal(true);
+              }}
+            >
+              {editingBook ? "Lưu thay đổi" : "Thêm"}
+            </Button>
           </Modal.Footer>
         </Modal>
 
         {/* Modal xác nhận thêm/sửa */}
-        <Modal show={showConfirmModal} onHide={() => setShowConfirmModal(false)} centered>
+        <Modal
+          show={showConfirmModal}
+          onHide={() => setShowConfirmModal(false)}
+          centered
+        >
           <Modal.Header closeButton>
-            <Modal.Title>{editingBook ? "Xác nhận chỉnh sửa" : "Xác nhận thêm sách"}</Modal.Title>
+            <Modal.Title>
+              {editingBook ? "Xác nhận chỉnh sửa" : "Xác nhận thêm sách"}
+            </Modal.Title>
           </Modal.Header>
           <Modal.Body>
             {editingBook
@@ -403,8 +464,15 @@ export default function BookManagement() {
               : "Bạn có chắc chắn muốn thêm sách mới không?"}
           </Modal.Body>
           <Modal.Footer>
-            <Button variant="secondary" onClick={() => setShowConfirmModal(false)}>Hủy</Button>
-            <Button variant="primary" onClick={handleAddBook}>Xác nhận</Button>
+            <Button
+              variant="secondary"
+              onClick={() => setShowConfirmModal(false)}
+            >
+              Hủy
+            </Button>
+            <Button variant="primary" onClick={handleAddBook}>
+              Xác nhận
+            </Button>
           </Modal.Footer>
         </Modal>
 
@@ -428,7 +496,9 @@ export default function BookManagement() {
           autohide
           style={{ position: "fixed", top: 20, right: 20, zIndex: 9999 }}
         >
-          <Toast.Header><strong className="me-auto">Thông báo</strong></Toast.Header>
+          <Toast.Header>
+            <strong className="me-auto">Thông báo</strong>
+          </Toast.Header>
           <Toast.Body>✅ Thao tác thành công!</Toast.Body>
         </Toast>
       </div>
