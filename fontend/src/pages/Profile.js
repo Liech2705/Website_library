@@ -3,58 +3,40 @@ import ApiService from "../services/api";
 import "./style.css";
 
 export default function ProfilePage() {
-  // Lấy user từ localStorage (nếu đã đăng nhập)
   const localUser = ApiService.getCurrentUser();
+
   const [user, setUser] = useState({
-    name: "",
-    email: "",
+    name: localUser?.name || "",
+    email: localUser?.email || "",
+    role: localUser?.role || "",
+    status: localUser?.status || "",
     phone: "",
     address: "",
     school_name: "",
-    role: "",
-    status: "",
     avatar: "",
   });
+
   const [errors, setErrors] = useState({});
   const [success, setSuccess] = useState("");
 
-  // Lấy thông tin user_infor và user từ backend khi vào trang
   useEffect(() => {
-    const fetchUserInfor = async () => {
+    const fetchUserInfo = async () => {
       try {
-        // Lấy thông tin user cơ bản từ localStorage
-        let baseUser = {
-          name: localUser.name || "",
-          email: localUser.email || "",
-          role: localUser.role || "",
-          status: "active"
-
-        };
-        // Lấy thông tin user_infor từ backend
         const infor = await ApiService.getMyUserInfor();
-        setUser({
-          ...baseUser,
+        setUser((prev) => ({
+          ...prev,
           phone: infor?.phone || "",
           address: infor?.address || "",
           school_name: infor?.school_name || "",
-          avatar: process.env.REACT_APP_STORAGE_URL + infor?.avatar || "",
-        });
+          avatar: infor?.avatar
+            ? `${process.env.REACT_APP_STORAGE_URL}${infor.avatar}?t=${Date.now()}`
+            : "",
+        }));
       } catch (err) {
-        // Nếu lỗi vẫn gán thông tin cơ bản
-        setUser({
-          name: localUser.name || "",
-          email: localUser.email || "",
-          role: localUser.role || "",
-          status: localUser.status || "",
-          avatar: "",
-          phone: "",
-          address: "",
-          school_name: "",
-        });
+        console.error("Lỗi lấy thông tin:", err);
       }
     };
-    fetchUserInfor();
-    // eslint-disable-next-line
+    fetchUserInfo();
   }, []);
 
   const handleChange = (e) => {
@@ -75,33 +57,37 @@ export default function ProfilePage() {
     if (Object.keys(errs).length > 0) {
       setErrors(errs);
       setSuccess("");
-    } else {
-      try {
-        await ApiService.updateUserProfile({
-          phone: user.phone,
-          address: user.address,
-          school_name: user.school_name,
-        });
-        setSuccess("✅ Cập nhật thông tin thành công!");
-        setErrors({});
-      } catch (err) {
-        setErrors({ general: err.message || "Cập nhật thất bại." });
-        setSuccess("");
-      }
+      return;
+    }
+    try {
+      await ApiService.updateUserProfile({
+        phone: user.phone,
+        address: user.address,
+        school_name: user.school_name,
+      });
+      setSuccess("✅ Cập nhật thông tin thành công!");
+      setErrors({});
+    } catch (err) {
+      setErrors({ general: err.message || "Cập nhật thất bại." });
+      setSuccess("");
     }
   };
 
   const handleAvatarChange = async (e) => {
     const file = e.target.files[0];
-    if (file) {
-      try {
-        const res = await ApiService.updateUserAvatar(file);
-        setUser({ ...user, avatar: res.url });
-        setSuccess("✅ Đổi ảnh đại diện thành công!");
-      } catch (err) {
-        setErrors({ general: err.message || "Đổi ảnh đại diện thất bại." });
-        setSuccess("");
-      }
+    if (!file) return;
+
+    try {
+      const res = await ApiService.updateUserAvatar(file);
+      setUser((prev) => ({
+        ...prev,
+        avatar: res.url + `?t=${Date.now()}`,
+      }));
+      setSuccess("✅ Đổi ảnh đại diện thành công!");
+      setErrors({});
+    } catch (err) {
+      setErrors({ general: err.message || "Đổi ảnh đại diện thất bại." });
+      setSuccess("");
     }
   };
 
@@ -113,12 +99,14 @@ export default function ProfilePage() {
           <div className="col-md-10 col-lg-8 mx-auto">
             <div className="card p-4 shadow-sm mb-4">
               <h5 className="mb-3 fw-bold">Thông tin tài khoản</h5>
-
               <div className="row">
                 {/* Avatar */}
                 <div className="col-md-3 text-center">
                   <img
-                    src={user.avatar || "https://yt3.ggpht.com/yti/ANjgQV-FgWf4XF8YlaoUDJNhBbH7KQ8nK9jSlWtuRle6_trGSaY=s88-c-k-c0x00ffffff-no-rj-mo"}
+                    src={
+                      user.avatar ||
+                      "https://yt3.ggpht.com/yti/ANjgQV-FgWf4XF8YlaoUDJNhBbH7KQ8nK9jSlWtuRle6_trGSaY=s88-c-k-c0x00ffffff-no-rj-mo"
+                    }
                     alt="avatar"
                     className="rounded border mb-2"
                     style={{
@@ -128,7 +116,7 @@ export default function ProfilePage() {
                       objectFit: "cover",
                     }}
                   />
-                  <label className="btn btn-light btn-sm border">
+                  <label className="btn btn-light btn-sm border mt-2">
                     📤 Thay ảnh đại diện
                     <input
                       type="file"
@@ -150,12 +138,16 @@ export default function ProfilePage() {
                         value={user.name}
                         onChange={handleChange}
                       />
-                      {errors.name && <div className="invalid-feedback">{errors.name}</div>}
+                      {errors.name && (
+                        <div className="invalid-feedback">{errors.name}</div>
+                      )}
                     </div>
+
                     <div className="col-md-6">
                       <label className="form-label">Email</label>
                       <input className="form-control" value={user.email} disabled />
                     </div>
+
                     <div className="col-md-6">
                       <label className="form-label">Số điện thoại *</label>
                       <input
@@ -164,8 +156,11 @@ export default function ProfilePage() {
                         value={user.phone}
                         onChange={handleChange}
                       />
-                      {errors.phone && <div className="invalid-feedback">{errors.phone}</div>}
+                      {errors.phone && (
+                        <div className="invalid-feedback">{errors.phone}</div>
+                      )}
                     </div>
+
                     <div className="col-md-6">
                       <label className="form-label">Địa chỉ *</label>
                       <input
@@ -178,6 +173,7 @@ export default function ProfilePage() {
                         <div className="invalid-feedback">{errors.address}</div>
                       )}
                     </div>
+
                     <div className="col-md-6">
                       <label className="form-label">Trường học *</label>
                       <input
@@ -190,24 +186,35 @@ export default function ProfilePage() {
                         <div className="invalid-feedback">{errors.school_name}</div>
                       )}
                     </div>
+
                     <div className="col-md-3">
                       <label className="form-label">Vai trò</label>
                       <input className="form-control" value={user.role} disabled />
                     </div>
+
                     <div className="col-md-3">
                       <label className="form-label">Trạng thái</label>
                       <input
                         className="form-control"
-                        value={user.status === "active" ? "Hoạt động" : user.status === "locked" ? "Bị khóa" : user.status}
+                        value={
+                          user.status === "active"
+                            ? "Hoạt động"
+                            : user.status === "locked"
+                            ? "Bị khóa"
+                            : user.status
+                        }
                         disabled
                       />
                     </div>
+
                     <div className="col-12">
                       <button className="btn btn-primary mt-3" onClick={handleSaveInfo}>
                         💾 Lưu thông tin
                       </button>
-                      {success && <div className="alert alert-success mt-2">{success}</div>}
-                      {errors.general && <div className="alert alert-danger mt-2">{errors.general}</div>}
+                      {success && <div className="alert alert-success mt-3">{success}</div>}
+                      {errors.general && (
+                        <div className="alert alert-danger mt-3">{errors.general}</div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -215,7 +222,8 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
-      </div>
+      </div> 
     </div>
   );
 }
+
