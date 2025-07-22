@@ -9,13 +9,30 @@ export default function AdminSidebarLayout({ children }) {
   const notiRef = useRef();
 
   const [showNotifications, setShowNotifications] = useState(false);
-  const [isSidebarVisible, setIsSidebarVisible] = useState(true);
+  const [isSidebarVisible, setIsSidebarVisible] = useState(window.innerWidth >= 768);
   const [notifications, setNotifications] = useState([]);
   const [userInfo, setUserInfo] = useState({ name: "admin", avatar: "" });
+  const [windowWidth, setWindowWidth] = useState(window.innerWidth);
 
   const isActive = (path) =>
     location.pathname === path || location.pathname.startsWith(path + "/");
 
+  // Theo dõi kích thước màn hình
+  useEffect(() => {
+    const handleResize = () => {
+      const width = window.innerWidth;
+      setWindowWidth(width);
+      if (width >= 768) {
+        setIsSidebarVisible(true);
+      } else if (!isSidebarVisible) {
+        setIsSidebarVisible(false);
+      }
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Đóng thông báo khi click bên ngoài
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (notiRef.current && !notiRef.current.contains(e.target)) {
@@ -26,8 +43,9 @@ export default function AdminSidebarLayout({ children }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
+  // Lấy thông tin người dùng & thông báo
   useEffect(() => {
-    const fetchUserInfoAndNotifications = async () => {
+    const fetchData = async () => {
       try {
         const res = await ApiService.getMyUserInfor();
         const avatar = process.env.REACT_APP_STORAGE_URL + (res?.avatar || "");
@@ -49,75 +67,104 @@ export default function AdminSidebarLayout({ children }) {
     };
 
     if (localStorage.getItem("isLoggedIn") === "true") {
-      fetchUserInfoAndNotifications();
+      fetchData();
     }
   }, []);
 
+  const handleToggleSidebar = () => {
+    setIsSidebarVisible(!isSidebarVisible);
+  };
+
+  const handleCloseSidebar = () => {
+    if (windowWidth < 768) setIsSidebarVisible(false);
+  };
+
+  const shouldShowSidebar = isSidebarVisible;
+
   return (
-    <div className="d-flex min-vh-100 bg-light">
+    <div className="d-flex flex-column flex-md-row min-vh-100 bg-light">
       {/* Sidebar */}
-      <div className={`sidebar-custom p-3 text-white bg-dark ${isSidebarVisible ? "show" : "hide"}`}>
-        <div className="text-center mb-4">
-          <img
-            src="https://media.istockphoto.com/id/1202911884/vi/vec-to/logo-s%C3%A1ch-v%C4%83n-h%E1%BB%8Dc-gi%C3%A1o-d%E1%BB%A5c-th%C6%B0-vi%E1%BB%87n-ki%E1%BA%BFn-th%E1%BB%A9c-%C4%91%E1%BB%8Dc-trang-nghi%C3%AAn-c%E1%BB%A9u-gi%E1%BA%A5y-vector-h%E1%BB%8Dc-tr%C6%B0%E1%BB%9Dng.jpg?s=170667a&w=0&k=20&c=kfffsGCfUSLINQSvjA3PNfxflPmimOYnTP-s1Orkmpc="
-            alt="logo"
-            className="sidebar-logo mb-2"
-            style={{ width: 50, height: 50 }}
-          />
-          <h5>Thư Viện</h5>
+      <div
+        className={`bg-dark text-white p-3 sidebar-custom position-fixed top-0 bottom-0 start-0 z-2 ${
+          shouldShowSidebar ? "d-block" : "d-none"
+        }`}
+        style={{
+          width: "250px",
+          top: "60px", // Bắt đầu từ dưới top bar
+          overflowY: "auto", // Thêm cuộn nếu nội dung sidebar dài
+          height: "calc(100% - 60px)", // Chiều cao trừ đi top bar
+        }}
+      >
+        <div className="d-flex justify-content-between align-items-center mb-3">
+          <h5 className="text-white">Thư Viện</h5>
+          {windowWidth < 768 && (
+            <button
+              className="btn btn-sm btn-outline-light"
+              onClick={handleCloseSidebar}
+            >
+              <i className="bi bi-x" />
+            </button>
+          )}
         </div>
 
         <ul className="nav flex-column gap-2">
-          <li className="nav-item">
-            <Link to="/library-management" className={`nav-link ${isActive("/library-management") ? "text-warning fw-bold" : "text-white"}`}>
-              <i className="bi bi-grid me-1" /> Dashboard
-            </Link>
-          </li>
-          <li className="nav-item">
-            <Link to="/admin/bookmanagement" className={`nav-link ${isActive("/admin/bookmanagement") ? "text-warning fw-bold" : "text-white"}`}>
-              <i className="bi bi-journal-bookmark-fill me-2" /> Quản lý sách
-            </Link>
-          </li>
-          <li className="nav-item">
-            <Link to="/admin/usermanagement" className={`nav-link ${isActive("/admin/usermanagement") ? "text-warning fw-bold" : "text-white"}`}>
-              <i className="bi bi-people me-2" /> Quản lý người dùng
-            </Link>
-          </li>
-          <li className="nav-item">
-            <Link to="/admin/borrowManagement" className={`nav-link ${isActive("/admin/borrowManagement") ? "text-warning fw-bold" : "text-white"}`}>
-              <i className="bi bi-arrow-left-right me-2" /> Quản lý mượn trả
-            </Link>
-          </li>
-          <li className="nav-item">
-            <Link to="/admin/history" className={`nav-link ${isActive("/admin/history") ? "text-warning fw-bold" : "text-white"}`}>
-              <i className="bi bi-clock-history me-2" /> Lịch sử thao tác
-            </Link>
-          </li>
-          <li className="nav-item">
-            <Link to="/admin/statisticsreport" className={`nav-link ${isActive("/admin/statisticsreport") ? "text-warning fw-bold" : "text-white"}`}>
-              <i className="bi bi-bar-chart-line me-2" /> Báo cáo thống kê
-            </Link>
-          </li>
+          {[
+            { to: "/library-management", icon: "grid", label: "Dashboard" },
+            { to: "/admin/bookmanagement", icon: "journal-bookmark-fill", label: "Quản lý sách" },
+            { to: "/admin/usermanagement", icon: "people", label: "Quản lý người dùng" },
+            { to: "/admin/borrowManagement", icon: "arrow-left-right", label: "Quản lý mượn trả" },
+            { to: "/admin/history", icon: "clock-history", label: "Lịch sử thao tác" },
+            { to: "/admin/statisticsreport", icon: "bar-chart-line", label: "Báo cáo thống kê" },
+          ].map(({ to, icon, label }) => (
+            <li key={to} className="nav-item">
+              <Link
+                to={to}
+                className={`nav-link ${isActive(to) ? "text-warning fw-bold" : "text-white"}`}
+                onClick={handleCloseSidebar}
+              >
+                <i className={`bi bi-${icon} me-2`} /> {label}
+              </Link>
+            </li>
+          ))}
+
           <li className="nav-item mt-4">
-            <Link to="/" className="nav-link text-danger">
+            <Link to="/" className="nav-link text-danger" onClick={handleCloseSidebar}>
               <i className="bi bi-box-arrow-left me-2" /> Thoát
             </Link>
           </li>
         </ul>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-grow-1 p-4" style={{ overflowX: "hidden" }}>
-        {/* Topbar */}
-        <div className="d-flex justify-content-between align-items-center mb-4">
-          <button className="btn btn-outline-secondary me-3" onClick={() => setIsSidebarVisible(!isSidebarVisible)}>
+      {/* Main content */}
+      <div
+        className="flex-grow-1"
+        style={{
+          paddingLeft: shouldShowSidebar && windowWidth >= 768 ? "260px" : "15px", // Giảm padding-left trên mobile
+          transition: "padding-left 0.3s",
+          paddingTop: "70px", // Đảm bảo nội dung không bị che bởi top bar
+          marginLeft: shouldShowSidebar && windowWidth < 768 ? "250px" : "0", // Dịch nội dung sang phải khi sidebar mở trên mobile
+        }}
+      >
+        {/* Top bar */}
+        <div
+          className="d-flex justify-content-between align-items-center p-3 shadow-sm bg-white sticky-top"
+          style={{ zIndex: 3, position: "fixed", top: 0, width: "100%" }} // Top bar cố định
+        >
+          <button
+            className="btn btn-outline-secondary"
+            onClick={handleToggleSidebar}
+            style={{ display: shouldShowSidebar && windowWidth < 768 ? "none" : "block" }} // Ẩn nút khi sidebar mở trên mobile
+          >
             <i className="bi bi-list fs-4" />
           </button>
 
           <div className="d-flex align-items-center gap-3 ms-auto">
-            {/* Chuông thông báo */}
+            {/* Notifications */}
             <div className="position-relative" ref={notiRef}>
-              <button className="btn btn-outline-secondary position-relative" onClick={() => setShowNotifications(!showNotifications)}>
+              <button
+                className="btn btn-outline-secondary position-relative"
+                onClick={() => setShowNotifications(!showNotifications)}
+              >
                 <i className="bi bi-bell fs-5" />
                 {notifications.length > 0 && (
                   <span className="position-absolute top-0 start-100 translate-middle badge bg-danger">
@@ -126,7 +173,15 @@ export default function AdminSidebarLayout({ children }) {
                 )}
               </button>
               {showNotifications && (
-                <div className="position-absolute bg-white shadow p-3 rounded" style={{ right: 0, top: "calc(100% + 10px)", width: "300px", zIndex: 999 }}>
+                <div
+                  className="position-absolute bg-white shadow p-3 rounded"
+                  style={{
+                    right: 0,
+                    top: "calc(100% + 10px)",
+                    width: "300px",
+                    zIndex: 999,
+                  }}
+                >
                   <h6 className="mb-2">🔔 Thông báo (Admin)</h6>
                   {notifications.length === 0 ? (
                     <div className="text-muted small">Không có thông báo.</div>
@@ -145,7 +200,7 @@ export default function AdminSidebarLayout({ children }) {
               )}
             </div>
 
-            {/* Avatar + Tên admin */}
+            {/* Avatar */}
             <div className="d-flex align-items-center">
               <img
                 src={userInfo.avatar || "/default-avatar.png"}
@@ -153,13 +208,12 @@ export default function AdminSidebarLayout({ children }) {
                 className="rounded-circle me-2"
                 style={{ width: 40, height: 40, objectFit: "cover" }}
               />
-              {/* <span className="fw-bold">{userInfo.name}</span> */}
             </div>
           </div>
         </div>
 
-        {/* Nội dung trang */}
-        {children}
+        {/* Nội dung */}
+        <div className="p-4">{children}</div>
       </div>
     </div>
   );

@@ -7,7 +7,6 @@ export default function Home() {
   const [books, setBooks] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Gọi API từ trang 1 (giữ nguyên ApiService)
   useEffect(() => {
     const fetchBooks = async () => {
       try {
@@ -23,13 +22,11 @@ export default function Home() {
     fetchBooks();
   }, []);
 
-  // Lọc sách hay (dựa theo lượt mượn cao nhất)
   const topBooks = [...books]
     .filter((b) => b.borrowCount != null)
     .sort((a, b) => b.borrowCount - a.borrowCount)
     .slice(0, 8);
 
-  // Lọc sách mới nhất
   const newBooks = [...books]
     .filter((b) => b.year)
     .sort((a, b) => b.year - a.year)
@@ -38,10 +35,10 @@ export default function Home() {
 
   return (
     <div className="min-vh-100 bg-light">
-      <main className="container py-4">
+      <main className="container-fluid py-4">
         {/* Carousel */}
         <div className="row justify-content-center mb-5">
-          <div className="col-md-10">
+          <div className="col-12 col-md-10 px-2">
             <div
               id="bookCarousel"
               className="carousel slide carousel-fade shadow-sm"
@@ -71,19 +68,34 @@ export default function Home() {
                     key={index}
                     className={`carousel-item ${item.active ? "active" : ""}`}
                   >
-                    <img src={item.img} className="d-block w-100" alt={item.title} />
-                    <div className="carousel-caption d-none d-md-block bg-dark bg-opacity-50 rounded">
-                      <h5>{item.title}</h5>
-                      <p>{item.desc}</p>
+                    <img
+                      src={item.img}
+                      className="d-block w-100"
+                      alt={item.title}
+                      style={{ maxHeight: "420px", objectFit: "cover" }}
+                    />
+                    <div className="carousel-caption d-none d-sm-block bg-dark bg-opacity-50 rounded px-2 py-1">
+                      <h6 className="text-truncate">{item.title}</h6>
+                      <p className="small">{item.desc}</p>
                     </div>
                   </div>
                 ))}
               </div>
-              <button className="carousel-control-prev" type="button" data-bs-target="#bookCarousel" data-bs-slide="prev">
+              <button
+                className="carousel-control-prev"
+                type="button"
+                data-bs-target="#bookCarousel"
+                data-bs-slide="prev"
+              >
                 <span className="carousel-control-prev-icon" />
                 <span className="visually-hidden">Previous</span>
               </button>
-              <button className="carousel-control-next" type="button" data-bs-target="#bookCarousel" data-bs-slide="next">
+              <button
+                className="carousel-control-next"
+                type="button"
+                data-bs-target="#bookCarousel"
+                data-bs-slide="next"
+              >
                 <span className="carousel-control-next-icon" />
                 <span className="visually-hidden">Next</span>
               </button>
@@ -91,15 +103,16 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Loading */}
-        {loading && <p className="text-center text-muted">Đang tải sách...</p>}
+        {loading && (
+          <p className="text-center text-muted">Đang tải sách...</p>
+        )}
 
         {!loading && (
           <>
             {/* 📈 Sách hay nên đọc */}
-            <section className="mb-5">
+            <section className="mb-5 px-3">
               <h3 className="mb-3 text-primary">📈 Sách Hay Nên Đọc</h3>
-              <div className="row row-cols-1 row-cols-sm-2 row-cols-md-4 g-4">
+              <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
                 {topBooks.map((book) => (
                   <div className="col" key={book.id}>
                     <BookCard book={book} />
@@ -109,9 +122,9 @@ export default function Home() {
             </section>
 
             {/* 🆕 Sách mới */}
-            <section className="mb-5">
+            <section className="mb-5 px-3">
               <h3 className="mb-3 text-success">🆕 Sách Mới</h3>
-              <div className="row row-cols-1 row-cols-sm-2 row-cols-md-4 g-4">
+              <div className="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-4">
                 {newBooks.map((book) => (
                   <div className="col" key={book.id}>
                     <BookCard book={book} />
