@@ -20,6 +20,7 @@ class BorrowRecordController extends Controller
         $result = $records->map(function ($r) {
             return [
                 'id' => $r->id,
+                'id_bookcopy' => $r->id_bookcopy,
                 'reader' => $r->user ? $r->user->name : '—',
                 'bookTitle' => $r->bookCopy && $r->bookCopy->book ? $r->bookCopy->book->title : '—',
                 'quantity' => 1, // mỗi phiếu là 1 bản copy, nếu có quantity thì lấy $r->quantity

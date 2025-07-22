@@ -203,7 +203,7 @@ export default function BorrowManagement() {
                   <td>{r.quantity}</td>
                   <td>{new Date(r.borrowDate).toLocaleString()}</td>
                   <td>{new Date(r.dueDate).toLocaleString()}</td>
-                  <td>{r.status === "borrowing" ? formatOverdueTime(r.dueDate) : "-"}</td>
+                  <td>{r.status === "borrowed" ? formatOverdueTime(r.dueDate) : "-"}</td>
                   <td>{r.note}</td>
                   <td>
                     {selectedTab === "pending" ? (
@@ -212,7 +212,7 @@ export default function BorrowManagement() {
                           size="sm"
                           variant="outline-success"
                           className="me-2"
-                          onClick={() => handleApprove(r.id)}
+                          onClick={() => handleApprove(r.id_bookcopy)}
                         >
                           Duyệt
                         </Button>
@@ -221,7 +221,7 @@ export default function BorrowManagement() {
                           variant="outline-danger"
                           onClick={() => {
                             setShowRejectModal(true);
-                            setRejectingId(r.id);
+                            setRejectingId(r.id_bookcopy);
                           }}
                         >
                           Từ chối
