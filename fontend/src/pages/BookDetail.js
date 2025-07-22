@@ -89,7 +89,7 @@ export default function BookDetail() {
       if (modalType === "borrow") {
         await ApiService.createBorrowRecord({
           user_id: userId,
-          book_copy_id: availableCopy?.id,
+          id_bookcopy: availableCopy?.id,
         });
         showToast("✅ Đã gửi yêu cầu mượn sách!", "success");
       } else {

@@ -13,7 +13,7 @@ class BookController extends Controller
 
     public function index(Request $request)
     {
-        $query = Book::with(['authors:id,name', 'category:id,name', 'bookCopies']);
+        $query = Book::with(['authors:id,name', 'category:id,name', 'availableBookCopies']);
 
         if ($request->has('search')) {
             $keyword = $request->input('search');
@@ -44,7 +44,7 @@ class BookController extends Controller
                 'publisher' => $book->publisher,
                 'description' => $book->description,
                 'year' => $book->year,
-                'book_copies' => $book->bookCopies->where('status', 'available')->values(),
+                'book_copies' => $book->availableBookCopies,
                 'views' => $book->views,
                 'image' => $book->image,
             ];
@@ -55,8 +55,8 @@ class BookController extends Controller
 
     public function _index()
     {
-        $books = Book::with(['authors:id,name', 'category:id,name', 'bookCopies'])->get();
-
+        $books = Book::with(['authors:id,name', 'category:id,name', 'availableBookCopies'])->get();
+        
         // Đổi tên key cho đúng format frontend nếu cần
         $books = $books->map(function ($book) {
             return [
@@ -75,7 +75,7 @@ class BookController extends Controller
                 'publisher' => $book->publisher,
                 'year' => $book->year,
                 'views' => $book->views,
-                'book_copies' => $book->bookCopies,
+                'book_copies' => $book->availableBookCopies,
                 'image' => $book->image,
             ];
         });
@@ -93,7 +93,7 @@ class BookController extends Controller
     public function show($id)
     {
         //return Book::findOrFail($id);
-        $book = Book::with(['authors:id,name', 'category:id,name', 'bookCopies'])->findOrFail($id);
+        $book = Book::with(['authors:id,name', 'category:id,name', 'availableBookCopies'])->findOrFail($id);
 
         // Format the response to match frontend expectations
         return response()->json([
@@ -114,7 +114,7 @@ class BookController extends Controller
             'views' => $book->views,
             'description' => $book->description,
             'image_url' => $book->image,
-            'book_copies' => $book->bookCopies,
+            'book_copies' => $book->availableBookCopies,
         ]);
     }
 

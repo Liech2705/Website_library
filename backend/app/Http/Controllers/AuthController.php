@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use App\Models\User;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User_infor;
@@ -20,18 +19,26 @@ class AuthController extends Controller
             'password' => 'required|string|min:6',
         ]);
 
-        $user = User::create([
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-        ]);
+        $user_email = User::where('email', $request->email)->first();
+        $user_phone = User_infor::where('phone', $request->phone)->first();
 
-        User_infor::create([
-            'user_id' => $user->id,
-            'phone' => $request->phone,
-            'address' => null,
-            'avatar' => null,
-            'school_name' => null,
-        ]);
+        if (!$user_email && !$user_phone) {
+            $user = User::create([
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+            ]);
+
+            User_infor::create([
+                'user_id' => $user->id,
+                'phone' => $request->phone,
+                'address' => null,
+                'avatar' => null,
+                'school_name' => null,
+            ]);
+        } else {
+            return response()->json(['message' => 'Email hoặc số điện thoại đã tồn tại !'], 422);
+        }
+
 
         $token = $user->createToken('auth_token', ['*'], now()->addDays(30))->plainTextToken;
 

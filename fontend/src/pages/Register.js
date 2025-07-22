@@ -4,6 +4,7 @@ import ApiService from "../services/api";
 
 export default function RegisterForm() {
   const navigate = useNavigate();
+  const [agreed, setAgreed] = useState(false);
   const [form, setForm] = useState({
     email: "", password: "", confirmPassword: "", phone: ""
   });
@@ -13,6 +14,8 @@ export default function RegisterForm() {
 
   const validateEmail = (email) =>
   /^[\w-.]+@([\w-]+\.)*edu\.vn$/.test(email);
+
+  const validatePhone = (phone) => /^0+[1|3|8|9]+\d{8}$/.test(phone)
 
   const validateForm = () => {
     const errs = {};
@@ -27,7 +30,7 @@ export default function RegisterForm() {
     if (!confirmPassword) errs.confirmPassword = "Vui lòng xác nhận mật khẩu.";
     else if (password !== confirmPassword) errs.confirmPassword = "Mật khẩu xác nhận không trùng khớp.";
 
-    if (!phone.trim()) errs.phone = "Vui lòng nhập số điện thoại.";
+    if (!validatePhone(phone)) errs.phone = "Vui lòng nhập số điện thoại hợp lệ !.";
 
     const existingUsers = JSON.parse(localStorage.getItem("users")) || [];
     if (existingUsers.some(u => u.email === email)) errs.email = "Email đã được sử dụng.";
@@ -90,6 +93,9 @@ export default function RegisterForm() {
               <input
                 type="text"
                 name="phone"
+                maxLength={10}
+                pattern="[0-9]*"
+                inputMode="numeric"
                 className={`form-control ${errors.phone ? "is-invalid" : ""}`}
                 placeholder="Số điện thoại"
                 value={form.phone}
@@ -159,16 +165,16 @@ export default function RegisterForm() {
 
 
             {/* Checkbox + Submit */}
-            <div className="form-check mb-3">
-              <input className="form-check-input" type="checkbox" required id="agree" />
-              <label className="form-check-label" htmlFor="agree" required>
+            <div className="form-check mb-3" >
+              <input className="form-check-input" type="checkbox"  id="agree" checked={agreed} onChange={e => setAgreed(e.target.checked)}/>
+              <label className="form-check-label" htmlFor="agree" >
                 Tôi đồng ý với điều khoản sử dụng
               </label>
             </div>
 
             {errors.general && <div className="alert alert-danger">{errors.general}</div>}
 
-            <button type="submit" className="btn btn-danger w-100">Đăng ký</button>
+            <button type="submit" className="btn btn-danger w-100" disabled={!agreed}>Đăng ký</button>
             <p className="text-center mt-3">
               Đã có tài khoản? <Link to="/login" className="text-decoration-none">Đăng nhập</Link>
             </p>

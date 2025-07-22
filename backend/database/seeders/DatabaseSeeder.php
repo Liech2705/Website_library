@@ -22,7 +22,6 @@ class DatabaseSeeder extends Seeder
             BookSeeder::class,
             BookAuthorSeeder::class,
             BookCopySeeder::class,
-            BorrowRecordSeeder::class,
             ReservationSeeder::class,
             NotificationSeeder::class,
             UserInforSeeder::class,

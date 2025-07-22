@@ -32,4 +32,6 @@ class BookCopy extends Model
     {
         return $this->hasMany(BorrowRecord::class, 'id_bookcopy');
     }
+
+    
 }

@@ -3,6 +3,7 @@ import { Button, Modal, Form } from "react-bootstrap";
 import AdminSidebarLayout from "../../components/AdminSidebar";
 import Pagination from "../../components/Pagination";
 import ApiServiceAdmin from "../../services/admin/api";
+import ApiService from "../../services/api";
 import "../style.css";
 
 export default function BorrowManagement() {
@@ -41,7 +42,7 @@ export default function BorrowManagement() {
 
     const fetchBooks = async () => {
       try {
-        const res = await ApiServiceAdmin.getAllBooks();
+        const res = await ApiService.getBooks();
         setBooks(res);
       } catch (error) {
         console.error("Lỗi khi tải danh sách sách:", error);
@@ -54,7 +55,7 @@ export default function BorrowManagement() {
 
   const handleApprove = async (id) => {
     try {
-      await ApiServiceAdmin.approveBorrow(id);
+      await ApiServiceAdmin.approveBorrows(id);
       const res = await ApiServiceAdmin.getBorrowRecords();
       setBorrowRecords(res);
     } catch (error) {
@@ -153,8 +154,8 @@ export default function BorrowManagement() {
                 {tab === "pending"
                   ? "Phiếu chờ duyệt"
                   : tab === "borrowing"
-                  ? "Phiếu đang mượn"
-                  : "Phiếu đã trả"}
+                    ? "Phiếu đang mượn"
+                    : "Phiếu đã trả"}
               </Button>
             ))}
           </div>
@@ -280,7 +281,7 @@ export default function BorrowManagement() {
         </Modal.Footer>
       </Modal>
 
-     {/* Modal lập phiếu mượn */}
+      {/* Modal lập phiếu mượn */}
       <Modal show={showCreateModal} onHide={() => setShowCreateModal(false)}>
         <Modal.Header closeButton>
           <Modal.Title>Lập phiếu mượn mới</Modal.Title>

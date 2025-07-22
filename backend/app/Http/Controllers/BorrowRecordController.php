@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\BorrowRecord;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Models\BookCopy;
 
 class BorrowRecordController extends Controller
 {
@@ -15,7 +16,7 @@ class BorrowRecordController extends Controller
             'user', // người mượn
             'bookCopy.book', // bản sao sách và sách
         ])->get();
-
+    
         $result = $records->map(function ($r) {
             return [
                 'id' => $r->id,
@@ -26,9 +27,10 @@ class BorrowRecordController extends Controller
                 'dueDate' => $r->due_time,
                 'note' => $r->note,
                 'returned' => $r->is_return == 1,
+                'status' => $r->bookCopy ? $r->bookCopy->status : null, // Thêm dòng này
             ];
         });
-
+    
         return response()->json($result);
     }
 
@@ -36,19 +38,21 @@ class BorrowRecordController extends Controller
     {
         $userId = Auth::id(); // Lấy id user hiện tại
 
-        // Kiểm tra xem user đã mượn cuốn sách này chưa (chưa trả)
-        $existingBorrow = BorrowRecord::where('user_id', $userId)
-            ->where('id_bookcopy', $request->id_bookcopy)
+        // 1. Kiểm tra user đã mượn cuốn sách này chưa (chưa trả)
+        $userBorrowed = BorrowRecord::where('user_id', $userId)
+            ->whereHas('bookCopy', function ($q) use ($request) {
+                $q->where('id_book', $request->id_book);
+            })
             ->where('is_return', false)
-            ->first();
+            ->exists();
 
-        if ($existingBorrow) {
+        if ($userBorrowed) {
             return response()->json([
                 'message' => 'Bạn đã mượn cuốn sách này rồi. Vui lòng trả sách trước khi mượn lại.'
             ], 403);
         }
 
-        // Kiểm tra số lần gia hạn của user này
+        // 2. Kiểm tra số lần gia hạn của user này
         $totalRenewCount = BorrowRecord::where('user_id', $userId)
             ->where('is_return', false)
             ->sum('renew_count');
@@ -59,7 +63,7 @@ class BorrowRecordController extends Controller
             ], 403);
         }
 
-        // Đếm số lượng sách chưa trả của user này
+        // 3. Đếm số lượng sách chưa trả của user này
         $currentBorrowCount = BorrowRecord::where('user_id', $userId)
             ->where('is_return', false)
             ->count();
@@ -70,16 +74,31 @@ class BorrowRecordController extends Controller
             ], 403);
         }
 
-        // Nếu chưa vượt quá giới hạn, cho phép mượn
+        // 4. Tìm BookCopy còn available
+        $availableCopy = BookCopy::where('id', $request->id_bookcopy)
+            ->where('status', 'available')
+            ->first();
+
+        if (!$availableCopy) {
+            return response()->json([
+                'message' => 'Hiện không còn bản copy nào của sách này để mượn.'
+            ], 404);
+        }
+
+        // 5. Tạo BorrowRecord
         $borrowRecord = BorrowRecord::create([
             'user_id' => $userId,
-            'id_bookcopy' => $request->id_bookcopy,
+            'id_bookcopy' => $availableCopy->id,
             'start_time' => now(),
             'due_time' => now()->addDays(14),
-            'renew_count' => 0, // Khởi tạo số lần gia hạn = 0
+            'renew_count' => 0,
             'is_return' => false,
             'is_extended_request' => false,
             'is_extended_approved' => 'pending',
+        ]);
+
+        $availableCopy->update([
+            'status' => 'pending'
         ]);
 
         return response()->json($borrowRecord, 201);
@@ -120,6 +139,7 @@ class BorrowRecordController extends Controller
                     'is_return' => $record->is_return,
                     'renew_count' => $record->renew_count,
                     'note' => $record->note,
+                    'status' => $record->bookCopy ? $record->bookCopy->status : null,
                 ];
             });
 

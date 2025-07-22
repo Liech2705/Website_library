@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import ToastMessage from "./ToastMessage";
 import notificationSound from "../assets/thongbao.wav";
-import axios from "axios";
 import ActionModal from "../components/ActionModal.js"; // ➕ Thêm modal
 import "./style.css";
 import ApiService from "../services/api.js";
@@ -68,6 +67,7 @@ export default function BookCard({ book }) {
       new Audio(notificationSound).play().catch(() => {});
     } catch (error) {
       console.error("Lỗi mượn sách:", error.message || error.response?.data);
+      console.log(availableCopy.id)
       setToast({
         show: true,
         message: "❌ " + error.message,

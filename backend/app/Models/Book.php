@@ -39,4 +39,9 @@ class Book extends Model
     {
         return $this->belongsToMany(Author::class, 'book_author', 'id_book', 'id_author');
     }
+
+    public function availableBookCopies()
+    {
+        return $this->hasMany(BookCopy::class, 'id_book')->where('status', 'available');
+    }
 }

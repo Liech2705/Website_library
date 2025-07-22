@@ -34,12 +34,18 @@ export default function BorrowHistory() {
   };
 
   useEffect(() => {
-    const fetchHistory = async () => {
+    const fetchHistory = async () => {  
       const userId = localStorage.getItem("user_id") || 1;
       try {
         const res = await ApiService.getBorrowRecordHistory(userId);
+        if (Array.isArray(res) && res.length > 0) {
+          console.log(res);
+        } else {
+          console.log('Không có dữ liệu');
+        }
         const data = Array.isArray(res) ? res : [];
         setRecords(data);
+        
         setFilteredRecords(data);
       } catch (err) {
         console.error("❌ API error:", err);

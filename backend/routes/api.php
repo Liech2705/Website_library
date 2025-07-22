@@ -54,7 +54,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('book-copies/{id}/approve', [BookCopyController::class, 'approveBorrow']);
         Route::post('book-copies/{id}/reject', [BookCopyController::class, 'rejectBorrow']);
         Route::apiResource('book-authors', BookAuthorController::class)->only(['store', 'update', 'destroy']);
-        Route::apiResource('borrow-records', BorrowRecordController::class)->only(['store', 'update', 'destroy']);
+        Route::apiResource('borrow-records', BorrowRecordController::class)->only(['update', 'destroy']);
         Route::apiResource('notifications', NotificationController::class)->only(['store', 'update', 'destroy']);
         Route::apiResource('reservation', ReservationController::class)->only(['store', 'update', 'destroy']);
 
