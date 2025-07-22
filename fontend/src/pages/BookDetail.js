@@ -229,7 +229,7 @@ export default function BookDetail() {
                       <p className="card-text text-muted" style={{ fontSize: "0.9rem" }}>
                         {rb.authors?.map(a => a.name).join(", ") || "Không rõ tác giả"}
                       </p>
-                      <Link to={`/books/${rb.id}`} className="btn btn-sm btn-outline-dark">
+                      <Link to={`/book/${rb.id}`} className="btn btn-sm btn-outline-dark">
                         Xem chi tiết
                       </Link>
                     </div>
