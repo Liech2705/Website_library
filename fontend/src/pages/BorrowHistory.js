@@ -73,12 +73,13 @@ export default function BorrowHistory() {
     setCurrentPage(1);
   }, [filterStatus, filterDate, records, renewRequests]);
 
-  const getStatus = (record) => {
-    if (record.status === "pending") return "Chờ duyệt mượn";
-    if (renewRequests[record.id] === "pending") return "Chờ duyệt gia hạn";
-    if (record.end_time) return "Đã trả";
-    return "Đang mượn";
-  };
+      const getStatus = (record) => {
+        if (record.status === "pending") return "Chờ duyệt mượn";
+        if (record.end_time) return "Đã trả";
+        if (renewRequests[record.id] === "pending") return "Chờ duyệt gia hạn";
+        return "Đang mượn";
+      };
+
 
   const handleRenewClick = (record) => {
     setSelectedRenew(record);
@@ -108,6 +109,12 @@ export default function BorrowHistory() {
   };
 
   const totalPages = Math.ceil(filteredRecords.length / recordsPerPage);
+      const isNearDue = (due_time) => {
+        const now = new Date();
+        const due = new Date(due_time);
+        const diffDays = (due - now) / (1000 * 60 * 60 * 24);
+        return diffDays <= 3 && diffDays >= 0;
+      };
 
   return (
     <div className="container mt-5">
@@ -203,11 +210,14 @@ export default function BorrowHistory() {
                     </span>
                   </td>
                   <td>
-                    {!record.end_time && record.status !== "pending" && !renewRequests[record.id] && (
-                      <button className="btn btn-sm btn-outline-primary" onClick={() => handleRenewClick(record)}>
-                        Gia hạn
-                      </button>
-                    )}
+                      {!record.end_time &&
+                        record.status === "approved" &&
+                        !renewRequests[record.id] &&
+                        isNearDue(record.due_time) && (
+                          <button className="btn btn-sm btn-outline-primary" onClick={() => handleRenewClick(record)}>
+                            Gia hạn
+                          </button>
+                      )}
                   </td>
                 </tr>
               ))}

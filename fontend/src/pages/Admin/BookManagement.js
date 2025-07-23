@@ -35,6 +35,9 @@ export default function BookManagement() {
   const [showToast, setShowToast] = useState(false);
   const [editingBook, setEditingBook] = useState(null);
   const [deletingBookId, setDeletingBookId] = useState(null);
+  const [toastMessage, setToastMessage] = useState("");
+const [toastVariant, setToastVariant] = useState("success"); // hoặc 'danger'
+
 
   const resetNewBook = () => ({
     title: "",
@@ -117,50 +120,95 @@ export default function BookManagement() {
   const currentBooks = filteredBooks.slice(indexOfFirstBook, indexOfLastBook);
 
   const handlePageChange = (page) => setCurrentPage(page);
+  const validateBook = () => {
+  const currentYear = new Date().getFullYear();
 
+  if (
+    !newBook.title.trim() ||
+    !newBook.author ||
+    !newBook.category ||
+    !newBook.publisher.trim() ||
+    !newBook.year ||
+    !newBook.image.trim()
+  ) {
+    setToastMessage("⚠️ Vui lòng nhập đầy đủ các trường.");
+    setToastVariant("danger");
+    setShowToast(true);
+    return false;
+  }
+
+  if (Number(newBook.year) < 0) {
+    setToastMessage("❌ Năm xuất bản không được âm.");
+    setToastVariant("danger");
+    setShowToast(true);
+    return false;
+  }
+
+  if (Number(newBook.year) > currentYear) {
+    setToastMessage(`❌ Năm xuất bản không được vượt quá ${currentYear}.`);
+    setToastVariant("danger");
+    setShowToast(true);
+    return false;
+  }
+
+  return true;
+};
   const handleAddBook = async () => {
-    if (editingBook) {
-      try {
-        await ApiServiceAdmin.updateBook(editingBook.id, {
-          title: newBook.title,
-          id_category: newBook.category,
-          id_author: newBook.author,
-          publisher: newBook.publisher,
-          description: newBook.description,
-          year: newBook.year,
-          image: newBook.image,
-        });
-        const res = await ApiService.getBooks();
-        setBooks(res);
-        setShowToast(true);
-      } catch (err) {
-        alert("Lỗi khi chỉnh sửa sách: " + err.message);
-      }
-    } else {
-      try {
-        const bookRes = await ApiServiceAdmin.addBook({
-          title: newBook.title,
-          id_category: newBook.category,
-          publisher: newBook.publisher,
-          description: newBook.description,
-          year: newBook.year,
-          image: newBook.image,
-        });
-        if (bookRes && newBook.author) {
-          await ApiServiceAdmin.addBookAuthor({
-            id_book: bookRes.id,
-            id_author: newBook.author,
-          });
+        if (editingBook) {
+          try {
+            await ApiServiceAdmin.updateBook(editingBook.id, {
+              title: newBook.title,
+              id_category: newBook.category,
+              id_author: newBook.author,
+              publisher: newBook.publisher,
+              description: newBook.description,
+              year: newBook.year,
+              image: newBook.image,
+            });
+
+            const res = await ApiService.getBooks();
+            setBooks(res);
+
+            setToastMessage("✅ Cập nhật sách thành công!");
+            setToastVariant("success");
+
+            setShowToast(true);
+          } catch (err) {
+            alert("Lỗi khi chỉnh sửa sách: " + err.message);
+          }
         }
-        const res = await ApiService.getBooks();
-        setBooks(res);
-        const bookAuthorRes = await ApiServiceAdmin.getBookAuthors();
-        setBookAuthors(bookAuthorRes);
-        setShowToast(true);
-      } catch (err) {
-        alert("Lỗi khi thêm sách: " + err.message);
-      }
-    }
+        else {
+          try {
+            const bookRes = await ApiServiceAdmin.addBook({
+              title: newBook.title,
+              id_category: newBook.category,
+              publisher: newBook.publisher,
+              description: newBook.description,
+              year: newBook.year,
+              image: newBook.image,
+            });
+
+            if (bookRes && newBook.author) {
+              await ApiServiceAdmin.addBookAuthor({
+                id_book: bookRes.id,
+                id_author: newBook.author,
+              });
+            }
+
+            const res = await ApiService.getBooks();
+            setBooks(res);
+            const bookAuthorRes = await ApiServiceAdmin.getBookAuthors();
+            setBookAuthors(bookAuthorRes);
+
+          
+            setToastMessage("✅ Thêm sách thành công!");
+            setToastVariant("success");
+
+            setShowToast(true);
+          } catch (err) {
+            alert("Lỗi khi thêm sách: " + err.message);
+          }
+        }
 
     setShowAddModal(false);
     setShowConfirmModal(false);
@@ -168,21 +216,43 @@ export default function BookManagement() {
     setEditingBook(null);
   };
 
-  const handleEditClick = (book) => {
-    setNewBook(book);
-    setEditingBook(book);
-    setShowAddModal(true);
-  };
+ const handleEditClick = (book) => {
+  const selectedAuthors = bookAuthors
+    .filter((ba) => ba.id_book === book.id)
+    .map((ba) => ba.id_author);
+
+  const selectedCategories = typeof book.category === "object"
+    ? [book.category.id]
+    : [book.category]; // nếu chỉ 1 category
+
+  setNewBook({
+    title: book.title,
+    authors: selectedAuthors,
+    categories: selectedCategories,
+    publisher: book.publisher,
+    description: book.description,
+    year: book.year,
+    image: book.image,
+  });
+
+  setEditingBook(book);
+  setShowAddModal(true);
+};
 
   const handleDeleteBook = async () => {
     try {
-      await ApiServiceAdmin.deleteBook(deletingBookId);
-      const res = await ApiService.getBooks();
-      setBooks(res);
-      setShowToast(true);
+await ApiServiceAdmin.deleteBook(deletingBookId);
+const res = await ApiService.getBooks();
+setBooks(res);
+setToastMessage("✅ Xóa sách thành công!");
+setToastVariant("success");
+setShowToast(true);
+
     } catch (err) {
-      alert("Lỗi khi xóa sách: " + err.message);
-    }
+  setToastMessage("❌ Lỗi khi xóa sách: " + err.message);
+  setToastVariant("danger");
+  setShowToast(true);
+}
     setDeletingBookId(null);
   };
 
@@ -336,7 +406,7 @@ export default function BookManagement() {
           <Modal.Body>
             <Form>
               <Form.Group className="mb-2">
-                <Form.Label>Tên sách</Form.Label>
+                <Form.Label>Tên sách <span className="text-danger">*</span></Form.Label>
                 <Form.Control
                   value={newBook.title}
                   onChange={(e) =>
@@ -345,7 +415,7 @@ export default function BookManagement() {
                 />
               </Form.Group>
               <Form.Group className="mb-2">
-                <Form.Label>Tác giả</Form.Label>
+                <Form.Label>Tác giả <span className="text-danger">*</span></Form.Label>
                 <Form.Select
                   value={newBook.author}
                   onChange={(e) =>
@@ -436,14 +506,17 @@ export default function BookManagement() {
               Đóng
             </Button>
             <Button
-              variant="success"
-              onClick={() => {
-                setShowAddModal(false);
-                setShowConfirmModal(true);
-              }}
-            >
-              {editingBook ? "Lưu thay đổi" : "Thêm"}
-            </Button>
+                variant="success"
+                onClick={() => {
+                  if (validateBook()) {
+                    setShowAddModal(false);
+                    setShowConfirmModal(true);
+                  }
+                }}
+              >
+                {editingBook ? "Lưu thay đổi" : "Thêm"}
+              </Button> 
+
           </Modal.Footer>
         </Modal>
 
@@ -489,18 +562,28 @@ export default function BookManagement() {
         </Modal>
 
         {/* Toast thông báo */}
-        <Toast
-          show={showToast}
-          onClose={() => setShowToast(false)}
-          delay={3000}
-          autohide
-          style={{ position: "fixed", top: 20, right: 20, zIndex: 9999 }}
-        >
-          <Toast.Header>
-            <strong className="me-auto">Thông báo</strong>
-          </Toast.Header>
-          <Toast.Body>✅ Thao tác thành công!</Toast.Body>
-        </Toast>
+       <Toast
+            show={showToast}
+            onClose={() => setShowToast(false)}
+            delay={3000}
+            autohide
+            bg={toastVariant}
+            style={{ position: "fixed", top: 20, right: 20, zIndex: 9999 }}
+          >
+            <Toast.Header closeButton={false}>
+              <span className="me-2 text-white">{toastVariant === "danger" ? "❌" : "✅"}</span>
+              <strong className="me-auto text-white">
+                {toastVariant === "danger" ? "Lỗi" : "Thông báo"}
+              </strong>
+              <button
+                type="button"
+                className="btn-close btn-close-white ms-auto"
+                onClick={() => setShowToast(false)}
+              ></button>
+            </Toast.Header>
+            <Toast.Body className="text-white">{toastMessage}</Toast.Body>
+          </Toast>
+
       </div>
     </AdminSidebarLayout>
   );
