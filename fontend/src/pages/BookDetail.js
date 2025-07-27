@@ -212,8 +212,8 @@ export default function BookDetail() {
           <div className="row">
             {relatedBooks.map(rb => {
               const img = rb.image_url?.startsWith("http")
-                ? rb.image_url
-                : `http://127.0.0.1:8000${rb.image_url || ""}`;
+                ? rb.image
+                : rb.image;
 
               return (
                 <div key={rb.id} className="col-md-4 mb-4">
