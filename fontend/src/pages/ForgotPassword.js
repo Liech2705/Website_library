@@ -1,36 +1,58 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
-  const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+  const [notFound, setNotFound] = useState(false);
+  const navigate = useNavigate();
 
-  const validateEmail = (email) => /^[\w-.]+@[\w-]+\.(edu\.vn)$/.test(email);
+  const validateEmail = (email) => /^[\w.-]+@([\w-]+\.)+edu\.vn$/.test(email);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setMessage("");
     setError("");
+    setNotFound(false);
 
     if (!email.trim()) {
       setError("Vui lòng nhập email.");
     } else if (!validateEmail(email)) {
-      setError("Email không hợp lệ (.edu.vn)");
+      setError("Email không đúng định dạng .edu.vn");
     } else {
-      // Giả lập gửi email
-      setMessage("Đã gửi liên kết khôi phục mật khẩu tới email của bạn.");
+      // Giả lập kiểm tra email tồn tại
+      const exists = await mockCheckEmailExists(email);
+      if (!exists) {
+        setNotFound(true);
+        setError("Email không tồn tại trong hệ thống.");
+      } else {
+        await fakeSendOTP(email); // Gửi OTP giả lập
+        navigate("/enter-otp", { state: { email } });
+      }
     }
+  };
+
+  // Giả lập API gửi OTP
+  const fakeSendOTP = (email) => {
+    return new Promise((resolve) => setTimeout(resolve, 1000));
+  };
+
+  // Giả lập kiểm tra email tồn tại trong hệ thống
+  const mockCheckEmailExists = (email) => {
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        const exists = email === "camloan@student.ctuet.edu.vn"; // chỉ email này hợp lệ
+        resolve(exists);
+      }, 500);
+    });
   };
 
   return (
     <div className="container-fluid min-vh-100 d-flex align-items-center justify-content-center bg-light">
       <div className="bg-white shadow rounded p-5" style={{ maxWidth: "500px", width: "100%" }}>
         <h3 className="text-center text-danger mb-4">Quên mật khẩu</h3>
-        <p className="text-center text-muted mb-4">Nhập email để lấy lại mật khẩu</p>
+        <p className="text-center text-muted mb-4">Nhập email đã đăng ký để lấy lại mật khẩu</p>
 
-        {message && <div className="alert alert-success">{message}</div>}
-        {error && <div className="alert alert-danger">{error}</div>}
+        {error && <div className="alert alert-danger text-center">{error}</div>}
 
         <form onSubmit={handleSubmit}>
           <div className="mb-3">
@@ -43,7 +65,7 @@ export default function ForgotPassword() {
             />
           </div>
 
-          <button type="submit" className="btn btn-danger w-100">Gửi yêu cầu</button>
+          <button type="submit" className="btn btn-danger w-100">Gửi mã OTP</button>
 
           <p className="text-center mt-3">
             Trở lại <Link to="/login" className="text-decoration-none">Đăng nhập</Link>

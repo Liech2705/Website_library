@@ -16,6 +16,7 @@ export default function AuthorManagement() {
   const [newAuthor, setNewAuthor] = useState({ name: "", bio: "", status: 1 });
   const [deletingAuthorId, setDeletingAuthorId] = useState(null);
 
+
   useEffect(() => {
     const fetchAuthors = async () => {
       try {
@@ -32,33 +33,43 @@ export default function AuthorManagement() {
   const filteredAuthors = authors.filter((author) =>
     (author.name || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
-
+const validateAuthor = () => {
+  if (!newAuthor.name.trim()) {
+    setToastMessage("⚠️ Vui lòng nhập tên tác giả!");
+    setToastVariant("danger");
+    setShowToast(true);
+    return false;
+  }
+  return true;
+};
+  const [toastMessage, setToastMessage] = useState("");
+  const [toastVariant, setToastVariant] = useState("success"); // or "danger"
   const handleSaveAuthor = async () => {
+  if (!validateAuthor()) return;
+
+  try {
     if (editingAuthor) {
-      try {
-        await ApiServiceAdmin.updateAuthor(editingAuthor.id, newAuthor);
-        // Sau khi cập nhật, reload lại danh sách
-        const res = await ApiServiceAdmin.getAuthors();
-        setAuthors(res);
-        setShowToast(true);
-      } catch (err) {
-        alert('Lỗi khi cập nhật tác giả: ' + err.message);
-      }
+      await ApiServiceAdmin.updateAuthor(editingAuthor.id, newAuthor);
+      setToastMessage("✅ Cập nhật tác giả thành công!");
     } else {
-      try {
-        await ApiServiceAdmin.addAuthor(newAuthor);
-        // Sau khi thêm, reload lại danh sách
-        const res = await ApiServiceAdmin.getAuthors();
-        setAuthors(res);
-        setShowToast(true);
-      } catch (err) {
-        alert('Lỗi khi thêm tác giả: ' + err.message);
-      }
+      await ApiServiceAdmin.addAuthor(newAuthor);
+      setToastMessage("✅ Thêm tác giả thành công!");
     }
+
+    const res = await ApiServiceAdmin.getAuthors();
+    setAuthors(res);
+    setToastVariant("success");
+    setShowToast(true);
     setShowModal(false);
     setEditingAuthor(null);
     setNewAuthor({ name: "", bio: "", status: 1 });
-  };
+  } catch (err) {
+    setToastMessage("❌ Lỗi: " + err.message);
+    setToastVariant("danger");
+    setShowToast(true);
+  }
+};
+
 
   const handleEditClick = (author) => {
     setEditingAuthor(author);
@@ -66,18 +77,21 @@ export default function AuthorManagement() {
     setShowModal(true);
   };
 
-  const handleDeleteAuthor = async () => {
-    try {
-      await ApiServiceAdmin.deleteAuthor(deletingAuthorId);
-      // Sau khi xóa, reload lại danh sách
-      const res = await ApiServiceAdmin.getAuthors();
-      setAuthors(res);
-      setShowToast(true);
-    } catch (err) {
-      alert('Lỗi khi xóa tác giả: ' + err.message);
-    }
-    setDeletingAuthorId(null);
-  };
+ const handleDeleteAuthor = async () => {
+  try {
+    await ApiServiceAdmin.deleteAuthor(deletingAuthorId);
+    const res = await ApiServiceAdmin.getAuthors();
+    setAuthors(res);
+    setToastMessage("✅ Xóa tác giả thành công!");
+    setToastVariant("success");
+    setShowToast(true);
+  } catch (err) {
+    setToastMessage("❌ Lỗi khi xóa tác giả: " + err.message);
+    setToastVariant("danger");
+    setShowToast(true);
+  }
+  setDeletingAuthorId(null);
+};
 
   return (
     <AdminSidebarLayout>
@@ -172,21 +186,27 @@ export default function AuthorManagement() {
           </Modal.Footer>
         </Modal>
 
-        {/* Toast */}
         <Toast
-          show={showToast}
-          onClose={() => setShowToast(false)}
-          delay={2500}
-          autohide
-          style={{ position: "fixed", top: 20, right: 20, zIndex: 9999 }}
-        >
-          <Toast.Header>
-            <strong className="me-auto">Thông báo</strong>
-          </Toast.Header>
-          <Toast.Body>
-            ✅ {editingAuthor ? "Cập nhật tác giả thành công!" : deletingAuthorId === null ? "Thêm tác giả thành công!" : "Xóa tác giả thành công!"}
-          </Toast.Body>
-        </Toast>
+  show={showToast}
+  onClose={() => setShowToast(false)}
+  delay={3000}
+  autohide
+  bg={toastVariant}
+  style={{ position: "fixed", top: 20, right: 20, zIndex: 9999 }}
+>
+  <Toast.Header closeButton={false}>
+    <strong className="me-auto text-white">
+      {toastVariant === "danger" ? "Lỗi" : "Thông báo"}
+    </strong>
+    <button
+      type="button"
+      className="btn-close btn-close-white ms-auto"
+      onClick={() => setShowToast(false)}
+    ></button>
+  </Toast.Header>
+  <Toast.Body className="text-white">{toastMessage}</Toast.Body>
+</Toast>
+
       </div>
     </AdminSidebarLayout>
   );

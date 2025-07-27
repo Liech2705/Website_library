@@ -13,6 +13,8 @@ export { default as ChangePassword } from "./ChangePassword";
 
 export { default as BorrowHistory } from "./BorrowHistory";
 export { default as Profile } from "./Profile";
+export { default as EnterOTP } from "./EnterOTP";
+export { default as ResetPassword } from "./ResetPassword";
 
 export { default as BookManagement } from "./Admin/BookManagement"; 
 export { default as BookCopyManagement} from "./Admin/BookCopyManagement"; 

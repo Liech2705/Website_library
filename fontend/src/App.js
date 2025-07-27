@@ -19,7 +19,7 @@ import {
 import {
   Home, Search, BookDetail, FilteredBooksPage,
   Login, Register, ForgotPassword, ChangePassword,
-  BorrowHistory, Profile
+  BorrowHistory, Profile, EnterOTP,ResetPassword
 } from "./pages";
 
 function AppContent() {
@@ -53,7 +53,7 @@ function AppContent() {
     "/admin/bookmanagement", "/admin/usermanagement",
     "/admin/bookmanagement/category", "/admin/bookmanagement/author",
     "/admin/bookmanagement/publisher", "/admin/borrowManagement",
-    "/admin/statisticsreport","/admin/history"
+    "/admin/statisticsreport","/admin/history","/enter-otp"
   ];
   const hideLayout = hideLayoutRoutes.includes(location.pathname) ||
   (
@@ -80,6 +80,8 @@ function AppContent() {
           <Route path="/change-password" element={auth.isLoggedIn ? <ChangePassword /> : <Navigate to="/login" />} />
           <Route path="/profile" element={auth.isLoggedIn ? <Profile /> : <Navigate to="/login" />} />
           <Route path="/history" element={auth.isLoggedIn ? <BorrowHistory /> : <Navigate to="/login" />} />
+          <Route path="/enter-otp" element={<EnterOTP />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
 
           {/* Admin only */}
           <Route path="/library-management" element={auth.isLoggedIn && auth.role === "admin" ? <AdminDashboard /> : <Navigate to="/login" />} />

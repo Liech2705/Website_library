@@ -38,28 +38,44 @@ export default function CategoryManagement() {
   const indexOfLast = currentPage * itemsPerPage;
   const indexOfFirst = indexOfLast - itemsPerPage;
   const currentCategories = filteredCategories.slice(indexOfFirst, indexOfLast);
+   const [toastType, setToastType] = useState("success");
+const [toastMessage, setToastMessage] = useState("");
 
   const handlePageChange = (page) => setCurrentPage(page);
+  const validateCategory = () => {
+  if (!newCategory.name.trim()) {
+    setShowToast(true);
+    setToastType("danger");
+    setToastMessage("⚠️ Vui lòng nhập tên thể loại!");
+    return false;
+  }
+  return true;
+};
 
-  const handleSaveCategory = async () => {
-    try {
-      if (editingCategory) {
-        await ApiServiceAdmin.updateCategory(editingCategory.id, newCategory);
-      } else {
-        await ApiServiceAdmin.addCategory(newCategory);
-      }
-      const res = await ApiServiceAdmin.getCategories();
-      setCategories(res);
-      setShowToast(true);
-    } catch (err) {
-      alert(
-        editingCategory
-          ? "Lỗi khi cập nhật thể loại: " + err.message
-          : "Lỗi khi thêm thể loại: " + err.message
-      );
+const handleSaveCategory = async () => {
+  if (!validateCategory()) return;
+
+  try {
+    if (editingCategory) {
+      await ApiServiceAdmin.updateCategory(editingCategory.id, newCategory);
+      setToastMessage("✅ Cập nhật thể loại thành công!");
+    } else {
+      await ApiServiceAdmin.addCategory(newCategory);
+      setToastMessage("✅ Thêm thể loại thành công!");
     }
+
+    const res = await ApiServiceAdmin.getCategories();
+    setCategories(res);
+    setToastType("success");
+    setShowToast(true);
     handleCloseModal();
-  };
+  } catch (err) {
+    setToastMessage("❌ Lỗi: " + err.message);
+    setToastType("danger");
+    setShowToast(true);
+  }
+};
+
 
   const handleEditClick = (category) => {
     setEditingCategory(category);
@@ -73,17 +89,21 @@ export default function CategoryManagement() {
     setNewCategory({ name: "", description: "" });
   };
 
-  const handleDeleteCategory = async () => {
-    try {
-      await ApiServiceAdmin.deleteCategory(deletingCategoryId);
-      const res = await ApiServiceAdmin.getCategories();
-      setCategories(res);
-      setShowToast(true);
-    } catch (err) {
-      alert("Lỗi khi xóa thể loại: " + err.message);
-    }
-    setDeletingCategoryId(null);
-  };
+const handleDeleteCategory = async () => {
+  try {
+    await ApiServiceAdmin.deleteCategory(deletingCategoryId);
+    const res = await ApiServiceAdmin.getCategories();
+    setCategories(res);
+    setToastMessage("✅ Xóa thể loại thành công!");
+    setToastType("success");
+    setShowToast(true);
+  } catch (err) {
+    setToastMessage("❌ Lỗi khi xóa thể loại: " + err.message);
+    setToastType("danger");
+    setShowToast(true);
+  }
+  setDeletingCategoryId(null);
+};
 
   return (
     <AdminSidebarLayout>
@@ -148,9 +168,9 @@ export default function CategoryManagement() {
                     >
                       <TrashFill />
                     </Button>
-                    <Button variant="outline-info" size="sm">
+                    {/* <Button variant="outline-info" size="sm">
                       <InfoCircleFill />
-                    </Button>
+                    </Button> */}
                   </td>
                 </tr>
               ))}
@@ -229,15 +249,22 @@ export default function CategoryManagement() {
           onClose={() => setShowToast(false)}
           delay={3000}
           autohide
+          bg={toastType}
           style={{ position: "fixed", top: 20, right: 20, zIndex: 9999 }}
         >
-          <Toast.Header>
-            <strong className="me-auto">Thông báo</strong>
+          <Toast.Header closeButton={false}>
+            <strong className="me-auto text-white">
+              {toastType === "danger" ? "Lỗi" : "Thông báo"}
+            </strong>
+            <button
+              type="button"
+              className="btn-close btn-close-white ms-auto"
+              onClick={() => setShowToast(false)}
+            ></button>
           </Toast.Header>
-          <Toast.Body>
-            ✅ {editingCategory ? "Cập nhật thể loại thành công!" : deletingCategoryId === null ? "Thêm thể loại thành công!" : "Xóa thể loại thành công!"}
-          </Toast.Body>
+          <Toast.Body className="text-white">{toastMessage}</Toast.Body>
         </Toast>
+
       </div>
     </AdminSidebarLayout>
   );

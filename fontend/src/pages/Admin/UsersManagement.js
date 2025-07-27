@@ -90,19 +90,13 @@ export default function UsersManagement() {
         setListUser(res);
         setToastMsg("Cập nhật người dùng thành công!");
       } else {
-        setListUser([
-          ...listUsers,
-          {
-            id: listUsers.length + 1,
-            role: 0,
-            status: 1,
-            lock_until: null,
-            id_infor: 100 + listUsers.length + 1,
-            ...formUser,
-          },
-        ]);
+      const created = await ApiServiceAdmin.addUser(formUser); 
+      if (created) {
+        const res = await ApiServiceAdmin.getUsers();
+        setListUser(res);
         setToastMsg("Thêm người dùng thành công!");
       }
+        }
     } catch (error) {
       setToastMsg("Lỗi khi lưu người dùng!");
     }
