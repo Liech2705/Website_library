@@ -35,6 +35,8 @@ Route::middleware('auth:sanctum')->group(function () {
     // Các api custom ở ngoài
     Route::get('/borrow-history/{userId}', [BorrowRecordController::class, 'history']);
     Route::post('/borrow-records/{id}/renew', [BorrowRecordController::class, 'renew']);
+    Route::post('/borrow-records/{id}/return', [BorrowRecordController::class, 'returnBook']);
+    Route::post('/borrow-records/{id}/reject', [BorrowRecordController::class, 'rejectBorrowRecords']);
     Route::get('/notifications/user/{userId}', [NotificationController::class, 'getByUser']);
     Route::post('/users/avatar', [UserInforController::class, 'updateAvatar']);
     Route::post('/update-infor', [UserInforController::class, 'updateProfile']);

@@ -63,9 +63,20 @@ export default function BorrowManagement() {
     }
   };
 
+  const handleReturnBook = async (id) => {
+    try {
+      await ApiServiceAdmin.returnBook(id);
+      const res = await ApiServiceAdmin.getBorrowRecords();
+      setBorrowRecords(res);
+      alert('Trả sách thành công!');
+    } catch (error) {
+      alert('Lỗi khi trả sách: ' + error.message);
+    }
+  };
+
   const handleReject = async () => {
     try {
-      await ApiServiceAdmin.rejectBorrow(rejectingId, rejectionReason);
+      await ApiServiceAdmin.rejectBorrowRecords(rejectingId, rejectionReason);
       const res = await ApiServiceAdmin.getBorrowRecords();
       setBorrowRecords(res);
     } catch (error) {
@@ -141,7 +152,7 @@ export default function BorrowManagement() {
         {/* Tabs */}
         <div className="d-flex justify-content-between align-items-center mb-3">
           <div>
-            {["pending", "borrowing", "returned"].map((tab) => (
+            {["pending", "borrowed", "returned"].map((tab) => (
               <Button
                 key={tab}
                 variant={selectedTab === tab ? "dark" : "outline-dark"}
@@ -153,7 +164,7 @@ export default function BorrowManagement() {
               >
                 {tab === "pending"
                   ? "Phiếu chờ duyệt"
-                  : tab === "borrowing"
+                  : tab === "borrowed"
                     ? "Phiếu đang mượn"
                     : "Phiếu đã trả"}
               </Button>
@@ -221,17 +232,17 @@ export default function BorrowManagement() {
                           variant="outline-danger"
                           onClick={() => {
                             setShowRejectModal(true);
-                            setRejectingId(r.id_bookcopy);
+                            setRejectingId(r.id);
                           }}
                         >
                           Từ chối
                         </Button>
                       </>
-                    ) : selectedTab === "borrowing" ? (
+                    ) : selectedTab === "borrowed" ? (
                       <Button
                         size="sm"
                         variant="outline-primary"
-                        onClick={() => alert(`Trả sách phiếu #${r.id}`)}
+                        onClick={() => handleReturnBook(r.id)}
                       >
                         Trả sách
                       </Button>

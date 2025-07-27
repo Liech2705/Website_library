@@ -23,7 +23,7 @@ export default function BorrowHistory() {
 
   const showToast = (message, variant = "info") => {
     const audio = new Audio(notificationSound);
-    audio.play().catch(() => {});
+    audio.play().catch(() => { });
     setToast({ show: true, message, variant });
   };
 
@@ -34,7 +34,7 @@ export default function BorrowHistory() {
   };
 
   useEffect(() => {
-    const fetchHistory = async () => {  
+    const fetchHistory = async () => {
       const userId = localStorage.getItem("user_id") || 1;
       try {
         const res = await ApiService.getBorrowRecordHistory(userId);
@@ -45,7 +45,7 @@ export default function BorrowHistory() {
         }
         const data = Array.isArray(res) ? res : [];
         setRecords(data);
-        
+
         setFilteredRecords(data);
       } catch (err) {
         console.error("❌ API error:", err);
@@ -61,7 +61,7 @@ export default function BorrowHistory() {
       filtered = filtered.filter((r) => {
         const renewState = renewRequests[r.id];
         if (filterStatus === "returned") return r.end_time;
-        if (filterStatus === "borrowing") return !r.end_time && r.status === "approved";
+        if (filterStatus === "borrowed") return !r.end_time && r.status === "borrowed";
         if (filterStatus === "pending") return r.status === "pending";
         return true;
       });
@@ -73,12 +73,12 @@ export default function BorrowHistory() {
     setCurrentPage(1);
   }, [filterStatus, filterDate, records, renewRequests]);
 
-      const getStatus = (record) => {
-        if (record.status === "pending") return "Chờ duyệt mượn";
-        if (record.end_time) return "Đã trả";
-        if (renewRequests[record.id] === "pending") return "Chờ duyệt gia hạn";
-        return "Đang mượn";
-      };
+  const getStatus = (record) => {
+    if (record.status === "pending") return "Chờ duyệt mượn";
+    if (record.end_time) return "Đã trả";
+    if (renewRequests[record.id] === "pending") return "Chờ duyệt gia hạn";
+    return "Đang mượn";
+  };
 
 
   const handleRenewClick = (record) => {
@@ -108,13 +108,35 @@ export default function BorrowHistory() {
     setShowRenewModal(false);
   };
 
+  const handleReturnBook = async (record) => {
+    try {
+      await ApiService.returnBook(record.id);
+      showToast("✅ Trả sách thành công!", "success");
+
+      // Cập nhật lại danh sách
+      const userId = localStorage.getItem("user_id") || 1;
+      const res = await ApiService.getBorrowRecordHistory(userId);
+      const data = Array.isArray(res) ? res : [];
+      setRecords(data);
+      setFilteredRecords(data);
+    } catch (error) {
+      let message = "❗ Trả sách thất bại.";
+      if (error?.response?.data?.message) {
+        message = `❗ ${error.response.data.message}`;
+      } else if (error?.message) {
+        message = `❗ ${error.message}`;
+      }
+      showToast(message, "danger");
+    }
+  };
+
   const totalPages = Math.ceil(filteredRecords.length / recordsPerPage);
-      const isNearDue = (due_time) => {
-        const now = new Date();
-        const due = new Date(due_time);
-        const diffDays = (due - now) / (1000 * 60 * 60 * 24);
-        return diffDays <= 3 && diffDays >= 0;
-      };
+  const isNearDue = (due_time) => {
+    const now = new Date();
+    const due = new Date(due_time);
+    const diffDays = (due - now) / (1000 * 60 * 60 * 24);
+    return diffDays <= 3 && diffDays >= 0;
+  };
 
   return (
     <div className="container mt-5">
@@ -136,7 +158,7 @@ export default function BorrowHistory() {
           >
             <option value="all">Tất cả trạng thái</option>
             <option value="returned">Đã trả</option>
-            <option value="borrowing">Đang mượn</option>
+            <option value="borrowed">Đang mượn</option>
             <option value="pending">Chờ duyệt</option>
           </select>
         </div>
@@ -196,27 +218,35 @@ export default function BorrowHistory() {
                   <td>{formatDate(record.end_time)}</td>
                   <td>
                     <span
-                      className={`badge ${
-                        record.status === "pending"
-                          ? "bg-secondary"
-                          : renewRequests[record.id] === "pending"
+                      className={`badge ${record.status === "pending"
+                        ? "bg-secondary"
+                        : renewRequests[record.id] === "pending"
                           ? "bg-info text-dark"
                           : record.end_time
-                          ? "bg-success"
-                          : "bg-warning text-dark"
-                      }`}
+                            ? "bg-success"
+                            : "bg-warning text-dark"
+                        }`}
                     >
                       {getStatus(record)}
                     </span>
                   </td>
                   <td>
-                      {!record.end_time &&
-                        record.status === "approved" &&
-                        !renewRequests[record.id] &&
-                        isNearDue(record.due_time) && (
-                          <button className="btn btn-sm btn-outline-primary" onClick={() => handleRenewClick(record)}>
-                            Gia hạn
-                          </button>
+                    {!record.end_time &&
+                      record.status === "borrowed" &&
+                      !renewRequests[record.id] &&
+                      isNearDue(record.due_time) && (
+                        <button className="btn btn-sm btn-outline-primary" onClick={() => handleRenewClick(record)}>
+                          Gia hạn
+                        </button>
+                      )}
+                    {!record.end_time &&
+                      record.status === "borrowed" && (
+                        <button
+                          className="btn btn-sm btn-outline-success ms-1"
+                          onClick={() => handleReturnBook(record)}
+                        >
+                          Trả sách
+                        </button>
                       )}
                   </td>
                 </tr>

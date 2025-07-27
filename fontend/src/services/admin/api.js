@@ -228,7 +228,18 @@ class ApiServiceAdmin {
 
     static async rejectBorrowRecords(id, reason) {
         try {
-            const response = await axios.post(`${API_BASE_URL}/book-copies/${id}/reject`, { reason }, {
+            const response = await axios.post(`${API_BASE_URL}/borrow-records/${id}/reject`, { reason }, {
+                headers: getAuthHeaders(),
+            });
+            return handleResponse(response);
+        } catch (error) {
+            handleError(error);
+        }
+    }
+
+    static async returnBook(id) {
+        try {
+            const response = await axios.post(`${API_BASE_URL}/borrow-records/${id}/return`, {}, {
                 headers: getAuthHeaders(),
             });
             return handleResponse(response);

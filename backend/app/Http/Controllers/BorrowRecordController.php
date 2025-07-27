@@ -6,6 +6,7 @@ use App\Models\BorrowRecord;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\BookCopy;
+use App\Models\Notification;
 
 class BorrowRecordController extends Controller
 {
@@ -28,7 +29,9 @@ class BorrowRecordController extends Controller
                 'dueDate' => $r->due_time,
                 'note' => $r->note,
                 'returned' => $r->is_return == 1,
-                'status' => $r->bookCopy ? $r->bookCopy->status : null, // Thêm dòng này
+                'status' => $r->is_return 
+                ? 'returned' 
+                : ($r->bookCopy->status === 'pending' ? 'pending' : 'borrowed'), // Thêm dòng này
             ];
         });
     
@@ -140,7 +143,9 @@ class BorrowRecordController extends Controller
                     'is_return' => $record->is_return,
                     'renew_count' => $record->renew_count,
                     'note' => $record->note,
-                    'status' => $record->bookCopy ? $record->bookCopy->status : null,
+                    'status' => $record->is_return
+                        ? 'returned' 
+                        : ($record->bookCopy->status === 'pending' ? 'pending' : 'borrowed'),
                 ];
             });
 
@@ -190,6 +195,67 @@ class BorrowRecordController extends Controller
             'message' => 'Gia hạn sách thành công.',
             'new_due_date' => $borrowRecord->due_time,
             'renew_count' => $borrowRecord->renew_count,
+        ], 200);
+    }
+
+    /**
+     * Trả sách
+     */
+    public function returnBook($id)
+    {
+        $userId = Auth::id();
+
+        // Tìm bản ghi mượn sách
+        $borrowRecord = BorrowRecord::where('id', $id)
+            ->where('user_id', $userId)
+            ->where('is_return', false)
+            ->first();
+
+        if (!$borrowRecord) {
+            return response()->json([
+                'message' => 'Không tìm thấy phiếu mượn sách hoặc sách đã được trả.'
+            ], 404);
+        }
+
+        // Cập nhật trạng thái trả sách
+        $borrowRecord->update([
+            'is_return' => true,
+            'end_time' => now(),
+        ]);
+
+        // Cập nhật trạng thái book copy về available
+        $bookCopy = BookCopy::find($borrowRecord->id_bookcopy);
+        if ($bookCopy) {
+            $bookCopy->update([
+                'status' => 'available'
+            ]);
+        }
+
+        return response()->json([
+            'message' => 'Trả sách thành công.',
+            'return_time' => $borrowRecord->end_time,
+        ], 200);
+    }
+
+    public function rejectBorrowRecords(Request $request, $id)
+    {
+        $borrowRecord = BorrowRecord::findOrFail($id);
+        $reason = $request->input('reason', 'Không có lý do');
+        
+        $borrowRecord->update([
+            'is_return' => true,
+            'note' => $reason,
+        ]);
+
+        $notification = Notification::create([
+            'user_id' => $borrowRecord->user_id,
+            'title' => 'Từ chối phiếu mượn sách',
+            'message' => 'Phiếu mượn sách của bạn đã bị từ chối. Lý do: ' . $reason,
+            'type' => 'warning',
+        ]);
+
+        return response()->json([
+            'message' => 'Từ chối phiếu mượn sách thành công.',
         ], 200);
     }
 }
