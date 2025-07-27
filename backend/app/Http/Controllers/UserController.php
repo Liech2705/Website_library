@@ -6,10 +6,13 @@ use App\Models\User;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use App\Traits\AdminActivityLogger;
 
 
 class UserController extends Controller
 {
+    use AdminActivityLogger;
+
     public function index()
     {
         $users = User::with('userInfo')->get();
@@ -38,7 +41,7 @@ class UserController extends Controller
     public function store(Request $request)
     {
         $user = User::create($request->all());
-
+        $this->logCreate('Người dùng', ['name' => $user->name, 'id' => $user->id]);
         return response()->json($user, 201);
     }
 
@@ -51,12 +54,15 @@ class UserController extends Controller
     {
         $user = User::findOrFail($id);
         $user->update($request->all());
+        $this->logUpdate('Người dùng', $id, ['name' => $user->name]);
         return response()->json($user, 200);
     }
 
     public function destroy($id)
     {
-        User::destroy($id);
+        $user = User::findOrFail($id);
+        $user->delete();
+        $this->logDelete('Người dùng', $id);
         return response()->json(null, 204);
     }
 

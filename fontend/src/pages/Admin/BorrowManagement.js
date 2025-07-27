@@ -89,7 +89,10 @@ export default function BorrowManagement() {
 
   const handleCreateBorrow = async () => {
     try {
-      await ApiServiceAdmin.createBorrowRecord(newBorrow);
+      await ApiService.createBorrowRecord({
+        user_id: localStorage.getItem("user_id"),
+        // id_bookcopy: newBorrow.bookTitle,
+      });
       const res = await ApiServiceAdmin.getBorrowRecords();
       setBorrowRecords(res);
       setShowCreateModal(false);

@@ -108,27 +108,6 @@ export default function BorrowHistory() {
     setShowRenewModal(false);
   };
 
-  const handleReturnBook = async (record) => {
-    try {
-      await ApiService.returnBook(record.id);
-      showToast("✅ Trả sách thành công!", "success");
-
-      // Cập nhật lại danh sách
-      const userId = localStorage.getItem("user_id") || 1;
-      const res = await ApiService.getBorrowRecordHistory(userId);
-      const data = Array.isArray(res) ? res : [];
-      setRecords(data);
-      setFilteredRecords(data);
-    } catch (error) {
-      let message = "❗ Trả sách thất bại.";
-      if (error?.response?.data?.message) {
-        message = `❗ ${error.response.data.message}`;
-      } else if (error?.message) {
-        message = `❗ ${error.message}`;
-      }
-      showToast(message, "danger");
-    }
-  };
 
   const totalPages = Math.ceil(filteredRecords.length / recordsPerPage);
   const isNearDue = (due_time) => {
@@ -237,15 +216,6 @@ export default function BorrowHistory() {
                       isNearDue(record.due_time) && (
                         <button className="btn btn-sm btn-outline-primary" onClick={() => handleRenewClick(record)}>
                           Gia hạn
-                        </button>
-                      )}
-                    {!record.end_time &&
-                      record.status === "borrowed" && (
-                        <button
-                          className="btn btn-sm btn-outline-success ms-1"
-                          onClick={() => handleReturnBook(record)}
-                        >
-                          Trả sách
                         </button>
                       )}
                   </td>

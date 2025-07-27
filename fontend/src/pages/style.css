@@ -73,3 +73,155 @@ body {
 }
 /*  */
 
+/* Responsive cho trang đặt trước sách */
+
+/* Mobile styles */
+@media (max-width: 767.98px) {
+  .table-responsive {
+    font-size: 0.875rem;
+  }
+  
+  .table td, .table th {
+    padding: 0.5rem 0.25rem;
+  }
+  
+  .btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+  }
+  
+  .badge {
+    font-size: 0.7rem;
+  }
+  
+  .pagination-sm .page-link {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+  }
+  
+  /* Ẩn một số cột trên mobile */
+  .d-none.d-md-table-cell {
+    display: none !important;
+  }
+  
+  .d-none.d-lg-table-cell {
+    display: none !important;
+  }
+  
+  /* Hiển thị thông tin bổ sung trong cell */
+  .small.text-muted {
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+  }
+  
+  /* Tabs responsive */
+  .btn-group-vertical .btn {
+    margin-bottom: 0.25rem;
+  }
+  
+  /* Search box full width trên mobile */
+  .w-100.w-md-auto {
+    width: 100% !important;
+  }
+}
+
+/* Tablet styles */
+@media (min-width: 768px) and (max-width: 991.98px) {
+  .table-responsive {
+    font-size: 0.9rem;
+  }
+  
+  .d-none.d-lg-table-cell {
+    display: none !important;
+  }
+  
+  /* Hiển thị một số thông tin trong cell */
+  .d-lg-none.small.text-muted {
+    display: none !important;
+  }
+}
+
+/* Desktop styles */
+@media (min-width: 992px) {
+  .table-responsive {
+    font-size: 1rem;
+  }
+  
+  .d-lg-none.small.text-muted {
+    display: none !important;
+  }
+}
+
+/* Hover effects cho desktop */
+@media (min-width: 768px) {
+  .table-hover tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.075);
+  }
+  
+  .btn:hover {
+    transform: translateY(-1px);
+    transition: transform 0.2s ease;
+  }
+}
+
+/* Loading spinner responsive */
+@media (max-width: 767.98px) {
+  .spinner-border {
+    width: 2rem;
+    height: 2rem;
+  }
+}
+
+/* Alert responsive */
+@media (max-width: 767.98px) {
+  .alert {
+    padding: 0.75rem;
+    font-size: 0.875rem;
+  }
+  
+  .alert small {
+    font-size: 0.75rem;
+  }
+}
+
+/* Card responsive cho admin dashboard */
+@media (max-width: 767.98px) {
+  .card {
+    margin-bottom: 1rem;
+  }
+  
+  .card-body {
+    padding: 1rem;
+  }
+  
+  .card-title {
+    font-size: 1.1rem;
+  }
+}
+
+/* Form controls responsive */
+@media (max-width: 767.98px) {
+  .form-control {
+    font-size: 0.875rem;
+  }
+  
+  .form-select {
+    font-size: 0.875rem;
+  }
+}
+
+/* Modal responsive */
+@media (max-width: 767.98px) {
+  .modal-dialog {
+    margin: 0.5rem;
+  }
+  
+  .modal-body {
+    padding: 1rem;
+  }
+  
+  .modal-footer {
+    padding: 0.75rem 1rem;
+  }
+}
+

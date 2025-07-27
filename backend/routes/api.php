@@ -43,6 +43,11 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user-infor/me', [UserInforController::class, 'getMyInfor']);
     Route::get('/user-infor/{userId}', [UserInforController::class, 'getInforByUserId']);
     Route::post('/change-password', [UserController::class, 'changePassword']);
+    
+    // Routes cho đặt trước sách
+    Route::get('/reservations/my', [ReservationController::class, 'getUserReservations']);
+    Route::post('/reservations', [ReservationController::class, 'store']);
+    Route::delete('/reservations/{id}/cancel', [ReservationController::class, 'cancelReservation']);
 
     // Các thao tác thêm/sửa/xóa chỉ cho admin
     Route::middleware('adminonly')->group(function () {
@@ -70,6 +75,10 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/dashboard/new-books', [DashboardController::class, 'newBooks']);
         Route::get('/dashboard/new-readers', [DashboardController::class, 'newReaders']);
         Route::get('/statistics/books', [BookController::class, 'statistics']);
+        
+        // Routes cho admin quản lý đặt trước sách
+        Route::post('/reservations/{id}/notify', [ReservationController::class, 'notifyBookAvailable']);
+        Route::post('/reservations/{id}/create-borrow', [ReservationController::class, 'createBorrowFromReservation']);
     });
     Route::post('/logout', [AuthController::class, 'logout']);
 });

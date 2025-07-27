@@ -93,10 +93,7 @@ export default function BookDetail() {
         });
         showToast("✅ Đã gửi yêu cầu mượn sách!", "success");
       } else {
-        await ApiService.createReservation({
-          user_id: userId,
-          book_id: book?.id,
-        });
+        await ApiService.createReservation(book?.id);
         showToast("✅ Đã gửi yêu cầu đặt trước!", "success");
       }
     } catch (err) {
@@ -167,26 +164,28 @@ export default function BookDetail() {
               <>
                 <div className="alert alert-success mb-3">✅ Sách hiện có sẵn.</div>
                 <button
-                  className="btn btn-primary"
+                  className="btn btn-primary w-100 w-md-auto"
                   onClick={() => {
                     setModalType("borrow");
                     setShowModal(true);
                   }}
                 >
-                  Mượn Sách Ngay
+                  <span className="d-none d-md-inline">Mượn Sách Ngay</span>
+                  <span className="d-md-none">Mượn Sách</span>
                 </button>
               </>
             ) : (
               <>
                 <div className="alert alert-warning mb-3">⚠️ Sách đã hết. Bạn có thể đặt trước.</div>
                 <button
-                  className="btn btn-outline-danger"
+                  className="btn btn-outline-danger w-100 w-md-auto"
                   onClick={() => {
                     setModalType("reserve");
                     setShowModal(true);
                   }}
                 >
-                  Đặt Trước
+                  <span className="d-none d-md-inline">Đặt Trước</span>
+                  <span className="d-md-none">Đặt Trước</span>
                 </button>
               </>
             )}

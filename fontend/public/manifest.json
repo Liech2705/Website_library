@@ -1,6 +1,6 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "Thư Viện",
+  "name": "Hệ Thống Quản Lý Thư Viện",
   "icons": [
     {
       "src": "favicon.ico",

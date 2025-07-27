@@ -248,6 +248,29 @@ class ApiServiceAdmin {
         }
     }
 
+    // Reservation methods for admin
+    static async getReservations() {
+        try {
+            const response = await axios.get(`${API_BASE_URL}/reservation`, {
+                headers: getAuthHeaders(),
+            });
+            return handleResponse(response);
+        } catch (error) {
+            handleError(error);
+        }
+    }
+
+    static async notifyBookAvailable(id) {
+        try {
+            const response = await axios.post(`${API_BASE_URL}/reservations/${id}/notify`, {}, {
+                headers: getAuthHeaders(),
+            });
+            return handleResponse(response);
+        } catch (error) {
+            handleError(error);
+        }
+    }
+
     static async addCategory(data) {
         try {
             const response = await axios.post(`${API_BASE_URL}/categories`, data, {
@@ -339,6 +362,17 @@ class ApiServiceAdmin {
     static async getAdminActivitiesByAdminId(adminId) {
         try {
             const response = await axios.get(`${API_BASE_URL}/admin-activities/${adminId}`, {
+                headers: getAuthHeaders(),
+            });
+            return handleResponse(response);
+        } catch (error) {
+            handleError(error);
+        }
+    }
+
+    static async createBorrowFromReservation(id) {
+        try {
+            const response = await axios.post(`${API_BASE_URL}/reservations/${id}/create-borrow`, {}, {
                 headers: getAuthHeaders(),
             });
             return handleResponse(response);

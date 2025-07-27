@@ -113,6 +113,7 @@ export default function AdminSidebarLayout({ children }) {
             { to: "/admin/bookmanagement", icon: "journal-bookmark-fill", label: "Quản lý sách" },
             { to: "/admin/usermanagement", icon: "people", label: "Quản lý người dùng" },
             { to: "/admin/borrowManagement", icon: "arrow-left-right", label: "Quản lý mượn trả" },
+            { to: "/admin/reservationManagement", icon: "calendar-check", label: "Quản lý đặt trước" },
             { to: "/admin/history", icon: "clock-history", label: "Lịch sử thao tác" },
             { to: "/admin/statisticsreport", icon: "bar-chart-line", label: "Báo cáo thống kê" },
           ].map(({ to, icon, label }) => (

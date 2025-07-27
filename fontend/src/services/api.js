@@ -190,6 +190,50 @@ class ApiService {
         }
     }
 
+    static async returnBook(id) {
+        try {
+            const response = await axios.post(`${API_BASE_URL}/borrow-records/${id}/return`, {}, {
+                headers: getAuthHeaders(),
+            });
+            return handleResponse(response);
+        } catch (error) {
+            handleError(error);
+        }
+    }
+
+    // Reservation methods
+    static async createReservation(bookId) {
+        try {
+            const response = await axios.post(`${API_BASE_URL}/reservations`, { id_book: bookId }, {
+                headers: getAuthHeaders(),
+            });
+            return handleResponse(response);
+        } catch (error) {
+            handleError(error);
+        }
+    }
+
+    static async getUserReservations() {
+        try {
+            const response = await axios.get(`${API_BASE_URL}/reservations/my`, {
+                headers: getAuthHeaders(),
+            });
+            return handleResponse(response);
+        } catch (error) {
+            handleError(error);
+        }
+    }
+
+    static async cancelReservation(id) {
+        try {
+            const response = await axios.delete(`${API_BASE_URL}/reservations/${id}/cancel`, {
+                headers: getAuthHeaders(),
+            });
+            return handleResponse(response);
+        } catch (error) {
+            handleError(error);
+        }
+    }
 
 
     // Notification methods

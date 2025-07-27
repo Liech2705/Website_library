@@ -130,7 +130,7 @@ class BookController extends Controller
     {
         $book = Book::findOrFail($id);
         $bookTitle = $book->title;
-        Book::destroy($id);
+        $book->delete();
         $this->logDelete('Sách', $id);
         return response()->json(null, 204);
     }

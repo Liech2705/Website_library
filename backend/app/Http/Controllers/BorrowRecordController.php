@@ -49,7 +49,15 @@ class BorrowRecordController extends Controller
             })
             ->where('is_return', false)
             ->exists();
+        
+        $borrow = BorrowRecord::where('user_id', $userId)
+            ->where('id_bookcopy', $request->id_bookcopy)
+            ->where('is_return', false)
+            ->first();
 
+        if ($borrow) {
+            return response()->json(['message' => 'Bạn đã mượn sách này rồi.'], 400);
+        }
         if ($userBorrowed) {
             return response()->json([
                 'message' => 'Bạn đã mượn cuốn sách này rồi. Vui lòng trả sách trước khi mượn lại.'

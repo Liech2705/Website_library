@@ -13,13 +13,14 @@ import {
   BorrowManagement,
   StatisticsReport,
   BookCopyManagement,
-  AdminActionHistory
+  AdminActionHistory,
+  ReservationManagement
 } from "./pages";
 
 import {
   Home, Search, BookDetail, FilteredBooksPage,
   Login, Register, ForgotPassword, ChangePassword,
-  BorrowHistory, Profile, EnterOTP,ResetPassword
+  BorrowHistory, Profile, EnterOTP, ResetPassword, ReservationHistory
 } from "./pages";
 
 function AppContent() {
@@ -39,11 +40,11 @@ function AppContent() {
     };
 
     window.addEventListener("storage", updateAuth);
-    window.addEventListener("authChanged", updateAuth); 
+    window.addEventListener("authChanged", updateAuth);
 
     return () => {
       window.removeEventListener("storage", updateAuth);
-      window.removeEventListener("authChanged", updateAuth); 
+      window.removeEventListener("authChanged", updateAuth);
     };
   }, []);
 
@@ -53,14 +54,14 @@ function AppContent() {
     "/admin/bookmanagement", "/admin/usermanagement",
     "/admin/bookmanagement/category", "/admin/bookmanagement/author",
     "/admin/bookmanagement/publisher", "/admin/borrowManagement",
-    "/admin/statisticsreport","/admin/history","/enter-otp"
+    "/admin/statisticsreport", "/admin/history", "/enter-otp"
   ];
   const hideLayout = hideLayoutRoutes.includes(location.pathname) ||
-  (
-    location.pathname.startsWith("/admin/books/") &&
-    location.pathname.endsWith("/copies")
-  ) ||
-  location.pathname.startsWith("/library-management");
+    (
+      location.pathname.startsWith("/admin/books/") &&
+      location.pathname.endsWith("/copies")
+    ) ||
+    location.pathname.startsWith("/library-management");
   return (
     <div className="d-flex flex-column min-vh-100">
       {!hideLayout && <Header />}
@@ -80,6 +81,7 @@ function AppContent() {
           <Route path="/change-password" element={auth.isLoggedIn ? <ChangePassword /> : <Navigate to="/login" />} />
           <Route path="/profile" element={auth.isLoggedIn ? <Profile /> : <Navigate to="/login" />} />
           <Route path="/history" element={auth.isLoggedIn ? <BorrowHistory /> : <Navigate to="/login" />} />
+          <Route path="/reservations" element={auth.isLoggedIn ? <ReservationHistory /> : <Navigate to="/login" />} />
           <Route path="/enter-otp" element={<EnterOTP />} />
           <Route path="/reset-password" element={<ResetPassword />} />
 
@@ -93,6 +95,7 @@ function AppContent() {
           <Route path="/admin/bookmanagement/author" element={auth.isLoggedIn && auth.role === "admin" ? <AuthorManagement /> : <Navigate to="/login" />} />
           <Route path="/admin/borrowManagement" element={auth.isLoggedIn && auth.role === "admin" ? <BorrowManagement /> : <Navigate to="/login" />} />
           <Route path="/admin/statisticsreport" element={auth.isLoggedIn && auth.role === "admin" ? <StatisticsReport /> : <Navigate to="/login" />} />
+          <Route path="/admin/reservationManagement" element={auth.isLoggedIn && auth.role === "admin" ? <ReservationManagement /> : <Navigate to="/login" />} />
         </Routes>
       </div>
       {!hideLayout && <Footer />}
