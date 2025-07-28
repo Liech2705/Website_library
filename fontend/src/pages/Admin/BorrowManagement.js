@@ -4,6 +4,8 @@ import AdminSidebarLayout from "../../components/AdminSidebar";
 import Pagination from "../../components/Pagination";
 import ApiServiceAdmin from "../../services/admin/api";
 import ApiService from "../../services/api";
+import ToastMessage from "../../components/ToastMessage";  // nhớ import ToastMessage của bạn
+import notificationSound from "../../assets/thongbao.wav"; // âm thanh thông báo
 import "../style.css";
 
 export default function BorrowManagement() {
@@ -28,7 +30,18 @@ export default function BorrowManagement() {
     note: "",
   });
 
+  const [toast, setToast] = useState({ show: false, message: "", variant: "info" });
+
   const itemsPerPage = 10;
+
+  // Hàm show toast + play âm thanh
+  const showToast = (message, variant = "info") => {
+    try {
+      const audio = new Audio(notificationSound);
+      audio.play().catch(() => {}); // phòng lỗi trình duyệt chặn âm thanh
+    } catch {}
+    setToast({ show: true, message, variant });
+  };
 
   useEffect(() => {
     const fetchRecords = async () => {
@@ -37,6 +50,7 @@ export default function BorrowManagement() {
         setBorrowRecords(res);
       } catch (error) {
         console.error("Lỗi khi tải phiếu mượn:", error);
+        showToast("❗ Lỗi khi tải phiếu mượn", "danger");
       }
     };
 
@@ -46,6 +60,7 @@ export default function BorrowManagement() {
         setBooks(res);
       } catch (error) {
         console.error("Lỗi khi tải danh sách sách:", error);
+        showToast("❗ Lỗi khi tải danh sách sách", "danger");
       }
     };
 
@@ -58,8 +73,9 @@ export default function BorrowManagement() {
       await ApiServiceAdmin.approveBorrows(id);
       const res = await ApiServiceAdmin.getBorrowRecords();
       setBorrowRecords(res);
+      showToast("✅ Duyệt phiếu thành công!", "success");
     } catch (error) {
-      alert('Lỗi khi duyệt phiếu: ' + error.message);
+      showToast("❗ Lỗi khi duyệt phiếu: " + error.message, "danger");
     }
   };
 
@@ -68,9 +84,20 @@ export default function BorrowManagement() {
       await ApiServiceAdmin.returnBook(id);
       const res = await ApiServiceAdmin.getBorrowRecords();
       setBorrowRecords(res);
-      alert('Trả sách thành công!');
+      showToast("✅ Trả sách thành công!", "success");
     } catch (error) {
-      alert('Lỗi khi trả sách: ' + error.message);
+      showToast("❗ Lỗi khi trả sách: " + error.message, "danger");
+    }
+  };
+
+  const handleExtendBorrow = async (id) => {
+    try {
+      await ApiServiceAdmin.approveExtendBorrow(id);
+      const res = await ApiServiceAdmin.getBorrowRecords();
+      setBorrowRecords(res);
+      showToast("✅ Gia hạn phiếu mượn thành công!", "success");
+    } catch (error) {
+      showToast("❗ Lỗi khi gia hạn phiếu: " + error.message, "danger");
     }
   };
 
@@ -79,8 +106,9 @@ export default function BorrowManagement() {
       await ApiServiceAdmin.rejectBorrowRecords(rejectingId, rejectionReason);
       const res = await ApiServiceAdmin.getBorrowRecords();
       setBorrowRecords(res);
+      showToast("✅ Từ chối phiếu thành công!", "success");
     } catch (error) {
-      alert('Lỗi khi từ chối phiếu: ' + error.message);
+      showToast("❗ Lỗi khi từ chối phiếu: " + error.message, "danger");
     }
     setShowRejectModal(false);
     setRejectionReason("");
@@ -105,15 +133,17 @@ export default function BorrowManagement() {
         dueDate: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split("T")[0],
         note: "",
       });
+      showToast("✅ Tạo phiếu mượn thành công!", "success");
     } catch (error) {
-      alert("Lỗi khi tạo phiếu mượn: " + error.message);
+      showToast("❗ Lỗi khi tạo phiếu mượn: " + error.message, "danger");
     }
   };
 
   const filteredByTab = borrowRecords.filter((r) => r.status === selectedTab);
-  const filteredRecords = filteredByTab.filter((r) =>
-    r.reader.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    r.bookTitle.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredRecords = filteredByTab.filter(
+    (r) =>
+      r.reader.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      r.bookTitle.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const totalPages = Math.ceil(filteredRecords.length / itemsPerPage);
@@ -150,217 +180,233 @@ export default function BorrowManagement() {
   };
 
   return (
-    <AdminSidebarLayout>
-      <div className="bg-white p-4 rounded shadow-sm">
-        {/* Tabs */}
-        <div className="d-flex justify-content-between align-items-center mb-3">
-          <div>
-            {["pending", "borrowed", "returned"].map((tab) => (
-              <Button
-                key={tab}
-                variant={selectedTab === tab ? "dark" : "outline-dark"}
-                className="me-2"
-                onClick={() => {
-                  setSelectedTab(tab);
-                  setCurrentPage(1);
-                }}
-              >
-                {tab === "pending"
-                  ? "Phiếu chờ duyệt"
-                  : tab === "borrowed"
+    <>
+      <ToastMessage
+        show={toast.show}
+        message={toast.message}
+        variant={toast.variant}
+        onClose={() => setToast({ ...toast, show: false })}
+      />
+
+      <AdminSidebarLayout>
+        <div className="bg-white p-4 rounded shadow-sm">
+          {/* Tabs */}
+          <div className="d-flex justify-content-between align-items-center mb-3">
+            <div>
+              {["pending", "borrowed", "returned"].map((tab) => (
+                <Button
+                  key={tab}
+                  variant={selectedTab === tab ? "dark" : "outline-dark"}
+                  className="me-2"
+                  onClick={() => {
+                    setSelectedTab(tab);
+                    setCurrentPage(1);
+                  }}
+                >
+                  {tab === "pending"
+                    ? "Phiếu chờ duyệt"
+                    : tab === "borrowed"
                     ? "Phiếu đang mượn"
                     : "Phiếu đã trả"}
-              </Button>
-            ))}
-          </div>
-          <Button variant="success" onClick={() => setShowCreateModal(true)}>
-            + Lập phiếu mượn
-          </Button>
-        </div>
-
-        {/* Search */}
-        <div className="mb-3">
-          <input
-            type="text"
-            className="form-control w-25"
-            placeholder="🔍 Tìm theo tên độc giả hoặc sách..."
-            value={searchTerm}
-            onChange={(e) => {
-              setSearchTerm(e.target.value);
-              setCurrentPage(1);
-            }}
-          />
-        </div>
-
-        {/* Table */}
-        <div className="scrollable-table-wrapper">
-          <table className="table table-striped table-bordered table-hover mt-3">
-            <thead className="table-dark">
-              <tr>
-                <th>Số phiếu</th>
-                <th>Tên độc giả</th>
-                <th>Tên sách</th>
-                <th>Số lượng mượn</th>
-                <th>Ngày tạo phiếu</th>
-                <th>Ngày hẹn trả</th>
-                <th>Ngày quá hạn</th>
-                <th>Ghi chú mượn</th>
-                <th>Hành động</th>
-              </tr>
-            </thead>
-            <tbody>
-              {currentRecords.map((r) => (
-                <tr key={r.id}>
-                  <td>{r.id}</td>
-                  <td>{r.reader}</td>
-                  <td>{r.bookTitle}</td>
-                  <td>{r.quantity}</td>
-                  <td>{new Date(r.borrowDate).toLocaleString()}</td>
-                  <td>{new Date(r.dueDate).toLocaleString()}</td>
-                  <td>{r.status === "borrowed" ? formatOverdueTime(r.dueDate) : "-"}</td>
-                  <td>{r.note}</td>
-                  <td>
-                    {selectedTab === "pending" ? (
-                      <>
-                        <Button
-                          size="sm"
-                          variant="outline-success"
-                          className="me-2"
-                          onClick={() => handleApprove(r.id_bookcopy)}
-                        >
-                          Duyệt
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline-danger"
-                          onClick={() => {
-                            setShowRejectModal(true);
-                            setRejectingId(r.id);
-                          }}
-                        >
-                          Từ chối
-                        </Button>
-                      </>
-                    ) : selectedTab === "borrowed" ? (
-                      <Button
-                        size="sm"
-                        variant="outline-primary"
-                        onClick={() => handleReturnBook(r.id)}
-                      >
-                        Trả sách
-                      </Button>
-                    ) : (
-                      <span className="text-muted">✓ Đã trả</span>
-                    )}
-                  </td>
-                </tr>
+                </Button>
               ))}
-            </tbody>
-          </table>
-        </div>
+            </div>
+            <Button variant="success" onClick={() => setShowCreateModal(true)}>
+              + Lập phiếu mượn
+            </Button>
+          </div>
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="mt-3 d-flex justify-content-center">
-            <Pagination
-              currentPage={currentPage}
-              totalPages={totalPages}
-              onPageChange={handlePageChange}
+          {/* Search */}
+          <div className="mb-3">
+            <input
+              type="text"
+              className="form-control w-25"
+              placeholder="🔍 Tìm theo tên độc giả hoặc sách..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
             />
           </div>
-        )}
-      </div>
 
-      {/* Modal từ chối */}
-      <Modal show={showRejectModal} onHide={() => setShowRejectModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Lý do từ chối</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form.Control
-            as="textarea"
-            rows={3}
-            value={rejectionReason}
-            onChange={(e) => setRejectionReason(e.target.value)}
-            placeholder="Nhập lý do từ chối..."
-          />
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowRejectModal(false)}>
-            Hủy
-          </Button>
-          <Button variant="danger" onClick={handleReject}>
-            Gửi lý do
-          </Button>
-        </Modal.Footer>
-      </Modal>
-
-      {/* Modal lập phiếu mượn */}
-      <Modal show={showCreateModal} onHide={() => setShowCreateModal(false)}>
-        <Modal.Header closeButton>
-          <Modal.Title>Lập phiếu mượn mới</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          <Form>
-            <Form.Group className="mb-3">
-              <Form.Label>Tên độc giả</Form.Label>
-              <Form.Control
-                type="text"
-                value={newBorrow.reader}
-                onChange={(e) => setNewBorrow({ ...newBorrow, reader: e.target.value })}
-              />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Tên sách</Form.Label>
-              <Form.Control
-                list="book-options"
-                type="text"
-                value={newBorrow.bookTitle}
-                onChange={(e) => handleBookTitleChange(e.target.value)}
-              />
-              <datalist id="book-options">
-                {books.map((b, i) => (
-                  <option key={i} value={b.title} />
+          {/* Table */}
+          <div className="scrollable-table-wrapper">
+            <table className="table table-striped table-bordered table-hover mt-3">
+              <thead className="table-dark">
+                <tr>
+                  <th>Số phiếu</th>
+                  <th>Tên độc giả</th>
+                  <th>Tên sách</th>
+                  <th>Số lượng mượn</th>
+                  <th>Ngày tạo phiếu</th>
+                  <th>Ngày hẹn trả</th>
+                  <th>Ngày quá hạn</th>
+                  <th>Ghi chú mượn</th>
+                  <th>Hành động</th>
+                </tr>
+              </thead>
+              <tbody>
+                {currentRecords.map((r) => (
+                  <tr key={r.id}>
+                    <td>{r.id}</td>
+                    <td>{r.reader}</td>
+                    <td>{r.bookTitle}</td>
+                    <td>{r.quantity}</td>
+                    <td>{new Date(r.borrowDate).toLocaleString()}</td>
+                    <td>{new Date(r.dueDate).toLocaleString()}</td>
+                    <td>{r.status === "borrowed" ? formatOverdueTime(r.dueDate) : "-"}</td>
+                    <td>{r.note}</td>
+                    <td>
+                      {selectedTab === "pending" ? (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="outline-success"
+                            className="me-2"
+                            onClick={() => handleApprove(r.id_bookcopy)}
+                          >
+                            Duyệt
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline-danger"
+                            onClick={() => {
+                              setShowRejectModal(true);
+                              setRejectingId(r.id);
+                            }}
+                          >
+                            Từ chối
+                          </Button>
+                        </>
+                      ) : selectedTab === "borrowed" ? (
+                        <>
+                          {r.is_extended_request === 1 && r.is_extended_approved === "pending" && (
+                            <Button
+                              size="sm"
+                              variant="outline-warning"
+                              className="me-2"
+                              onClick={() => handleExtendBorrow(r.id)}
+                            >
+                              Gia Hạn
+                            </Button>
+                          )}
+                          <Button
+                            size="sm"
+                            variant="outline-primary"
+                            onClick={() => handleReturnBook(r.id)}
+                          >
+                            Trả sách
+                          </Button>
+                        </>
+                      ) : (
+                        <span className="text-muted">✓ Đã trả</span>
+                      )}
+                    </td>
+                  </tr>
                 ))}
-              </datalist>
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Nhà xuất bản</Form.Label>
-              <Form.Control
-                type="text"
-                value={newBorrow.publisher}
-                disabled
+              </tbody>
+            </table>
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="mt-3 d-flex justify-content-center">
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
               />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Ngày tạo phiếu</Form.Label>
-              <Form.Control type="date" value={newBorrow.borrowDate} disabled />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Ngày hẹn trả</Form.Label>
-              <Form.Control type="date" value={newBorrow.dueDate} disabled />
-            </Form.Group>
-            <Form.Group className="mb-3">
-              <Form.Label>Ghi chú</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={2}
-                value={newBorrow.note}
-                onChange={(e) => setNewBorrow({ ...newBorrow, note: e.target.value })}
-              />
-            </Form.Group>
-          </Form>
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={() => setShowCreateModal(false)}>
-            Hủy
-          </Button>
-          <Button variant="primary" onClick={handleCreateBorrow}>
-            Tạo phiếu
-          </Button>
-        </Modal.Footer>
-      </Modal>
-    </AdminSidebarLayout>
+            </div>
+          )}
+        </div>
+
+        {/* Modal từ chối */}
+        <Modal show={showRejectModal} onHide={() => setShowRejectModal(false)}>
+          <Modal.Header closeButton>
+            <Modal.Title>Lý do từ chối</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <Form.Control
+              as="textarea"
+              rows={3}
+              value={rejectionReason}
+              onChange={(e) => setRejectionReason(e.target.value)}
+              placeholder="Nhập lý do từ chối..."
+            />
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowRejectModal(false)}>
+              Hủy
+            </Button>
+            <Button variant="danger" onClick={handleReject}>
+              Gửi lý do
+            </Button>
+          </Modal.Footer>
+        </Modal>
+
+        {/* Modal lập phiếu mượn */}
+        <Modal show={showCreateModal} onHide={() => setShowCreateModal(false)}>
+          <Modal.Header closeButton>
+            <Modal.Title>Lập phiếu mượn mới</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <Form>
+              <Form.Group className="mb-3">
+                <Form.Label>Tên độc giả</Form.Label>
+                <Form.Control
+                  type="text"
+                  value={newBorrow.reader}
+                  onChange={(e) => setNewBorrow({ ...newBorrow, reader: e.target.value })}
+                />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Tên sách</Form.Label>
+                <Form.Control
+                  list="book-options"
+                  type="text"
+                  value={newBorrow.bookTitle}
+                  onChange={(e) => handleBookTitleChange(e.target.value)}
+                />
+                <datalist id="book-options">
+                  {books.map((b, i) => (
+                    <option key={i} value={b.title} />
+                  ))}
+                </datalist>
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Nhà xuất bản</Form.Label>
+                <Form.Control type="text" value={newBorrow.publisher} disabled />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Ngày tạo phiếu</Form.Label>
+                <Form.Control type="date" value={newBorrow.borrowDate} disabled />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Ngày hẹn trả</Form.Label>
+                <Form.Control type="date" value={newBorrow.dueDate} disabled />
+              </Form.Group>
+              <Form.Group className="mb-3">
+                <Form.Label>Ghi chú</Form.Label>
+                <Form.Control
+                  as="textarea"
+                  rows={2}
+                  value={newBorrow.note}
+                  onChange={(e) => setNewBorrow({ ...newBorrow, note: e.target.value })}
+                />
+              </Form.Group>
+            </Form>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowCreateModal(false)}>
+              Hủy
+            </Button>
+            <Button variant="primary" onClick={handleCreateBorrow}>
+              Tạo phiếu
+            </Button>
+          </Modal.Footer>
+        </Modal>
+      </AdminSidebarLayout>
+    </>
   );
 }
-

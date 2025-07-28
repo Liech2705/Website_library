@@ -2,13 +2,11 @@ import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import ApiService from "../services/api";
 
-
 export default function LoginForm() {
   const navigate = useNavigate();
   const [user, setUser] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
-
 
   const validate = () => {
     const errs = {};
@@ -28,10 +26,29 @@ export default function LoginForm() {
     if (Object.keys(errs).length > 0) return setErrors(errs);
 
     try {
-      await ApiService.login(user.email, user.password);
-      console.log("Đăng nhập thành công, chuyển trang...");
-      // Đăng nhập thành công, ApiService đã lưu localStorage
+      const res = await ApiService.login(user.email, user.password);
+      const userData = res.user;
+      const lockedUntil = userData.locked_until;
+
+      // Kiểm tra nếu tài khoản đang bị khóa
+      if (lockedUntil && new Date(lockedUntil) > new Date()) {
+        setErrors({
+          general:
+            "Tài khoản của bạn đang bị khóa đến " +
+            new Date(lockedUntil).toLocaleString(),
+        });
+        return;
+      }
+
+      // Lưu thông tin đăng nhập
+      localStorage.setItem("isLoggedIn", "true");
+      localStorage.setItem("user", JSON.stringify(userData));
+      localStorage.setItem("token", res.access_token);
+      localStorage.setItem("locked_until", lockedUntil || "");
+
+      // Gửi sự kiện để cập nhật UI bên ngoài nếu cần
       window.dispatchEvent(new Event("storage"));
+
       navigate("/");
     } catch (err) {
       setErrors({ general: err.message || "Thông tin đăng nhập không đúng." });
@@ -54,7 +71,7 @@ export default function LoginForm() {
           {errors.general && <div className="alert alert-danger">{errors.general}</div>}
 
           <form onSubmit={login}>
-           {["email", "password"].map((field, i) => (
+            {["email", "password"].map((field, i) => (
               <div className="mb-3" key={i}>
                 <div style={{ position: "relative" }}>
                   <input
@@ -86,7 +103,6 @@ export default function LoginForm() {
                 {errors[field] && <div className="invalid-feedback">{errors[field]}</div>}
               </div>
             ))}
-
 
             <div className="d-flex justify-content-between align-items-center mb-3">
               <div className="form-check">

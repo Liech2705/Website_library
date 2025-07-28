@@ -56,33 +56,45 @@ class AuthController extends Controller
     }
 
     // Đăng nhập
-    public function login(Request $request)
-    {
-        $request->validate([
-            'email' => 'required|email',
-            'password' => 'required',
-        ]);
+public function login(Request $request)
+{
+    $request->validate([
+        'email' => 'required|email',
+        'password' => 'required',
+    ]);
 
-        $user = User::where('email', $request->email)->first();
+    $user = User::where('email', $request->email)->first();
 
-        if (!$user || !Hash::check($request->password, $user->password)) {
-            return response()->json(['message' => 'Thông tin đăng nhập không đúng'], 401);
-        }
-
-        $token = $user->createToken('auth_token', ['*'], now()->addDays(30))->plainTextToken;
-
-        return response()->json([
-            'access_token' => $token,
-            'token_type' => 'Bearer',
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'role' => $user->role,
-            ],
-        ]);
+    if (!$user || !Hash::check($request->password, $user->password)) {
+        return response()->json(['message' => 'Thông tin đăng nhập không đúng'], 401);
     }
 
+    // Kiểm tra tài khoản bị khóa vĩnh viễn
+    if ($user->status === 'locked') {
+        return response()->json(['message' => 'Tài khoản của bạn đã bị khóa. Vui lòng liên hệ quản trị viên.'], 403);
+    }
+
+    // Kiểm tra tài khoản bị khóa tạm thời
+    if ($user->lock_until && now()->lt($user->lock_until)) {
+        return response()->json([
+            'message' => 'Tài khoản bị khóa đến ' . $user->lock_until->format('d/m/Y H:i'),
+        ], 403);
+    }
+
+    $token = $user->createToken('auth_token', ['*'], now()->addDays(30))->plainTextToken;
+
+    return response()->json([
+        'access_token' => $token,
+        'token_type' => 'Bearer',
+        'user' => [
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'role' => $user->role,
+            'status' => $user->status,
+        ],
+    ]);
+}
     // Đăng xuất
     public function logout(Request $request)
     {

@@ -2,13 +2,15 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import ToastMessage from "./ToastMessage";
 import notificationSound from "../assets/thongbao.wav";
-import ActionModal from "../components/ActionModal.js"; // ➕ Thêm modal
+import ActionModal from "../components/ActionModal.js";
 import "./style.css";
 import ApiService from "../services/api.js";
 
 export default function BookCard({ book }) {
+  // Kiểm tra login và trạng thái tài khoản
   const isLoggedIn = localStorage.getItem("isLoggedIn") === "true";
-  const userId = isLoggedIn ? localStorage.getItem("user_id") : null; // ✅ giữ nguyên theo trang 1
+  const userId = isLoggedIn ? localStorage.getItem("user_id") : null;
+  const userStatus = isLoggedIn ? localStorage.getItem("user_status") : null; // trạng thái user (active/locked)
 
   const [toast, setToast] = useState({
     show: false,
@@ -16,7 +18,7 @@ export default function BookCard({ book }) {
     variant: "info",
   });
 
-  const [showModal, setShowModal] = useState(false); // ➕ modal toggle
+  const [showModal, setShowModal] = useState(false);
 
   const authors = book.authors?.map((a) => a.name).join(", ") || "Không rõ";
   const publisher = book.publisher || "Không rõ";
@@ -44,6 +46,17 @@ export default function BookCard({ book }) {
       return;
     }
 
+const userStatus = localStorage.getItem("user_status");
+if (userStatus === "locked") {
+  setToast({
+    show: true,
+    message: "Tài khoản của bạn đã bị khóa, không thể mượn sách.",
+    variant: "danger",
+  });
+  new Audio(notificationSound).play().catch(() => {});
+  return;
+}
+
     if (!isAvailable || !availableCopy?.id) {
       setToast({
         show: true,
@@ -55,9 +68,8 @@ export default function BookCard({ book }) {
 
     try {
       const data = {
-        user_id : userId,
         id_bookcopy: availableCopy.id,
-      }
+      };
       await ApiService.createBorrowRecord(data);
       setToast({
         show: true,
@@ -66,11 +78,10 @@ export default function BookCard({ book }) {
       });
       new Audio(notificationSound).play().catch(() => {});
     } catch (error) {
-      console.error("Lỗi mượn sách:", error.message || error.response?.data);
-      console.log(availableCopy.id)
+      console.error("Lỗi mượn sách:", error.response?.data || error.message);
       setToast({
         show: true,
-        message: "❌ " + error.message,
+        message: "❌ " + (error.response?.data?.message || error.message),
         variant: "danger",
       });
     }
@@ -85,7 +96,7 @@ export default function BookCard({ book }) {
         onClose={() => setToast({ ...toast, show: false })}
       />
 
-      {/* ➕ Modal xác nhận mượn sách */}
+      {/* Modal xác nhận mượn sách */}
       <ActionModal
         show={showModal}
         onClose={() => setShowModal(false)}
@@ -123,10 +134,12 @@ export default function BookCard({ book }) {
             </div>
 
             <button
-              className={`btn btn-sm rounded-pill px-3 mt-auto ${isAvailable ? "btn-success" : "btn-outline-secondary"}`}
+              className={`btn btn-sm rounded-pill px-3 mt-auto ${
+                isAvailable ? "btn-success" : "btn-outline-secondary"
+              }`}
               onClick={(e) => {
                 e.preventDefault();
-                if (isAvailable) setShowModal(true); // 👉 mở modal thay vì mượn trực tiếp
+                if (isAvailable) setShowModal(true); // mở modal xác nhận mượn
               }}
               disabled={!isAvailable}
             >

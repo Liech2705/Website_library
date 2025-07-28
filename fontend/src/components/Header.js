@@ -84,18 +84,18 @@ export default function Header() {
     navigate("/");
   };
 
-  const handleSearch = (e) => {
-    e.preventDefault();
-    if (keyword.trim()) {
-      const offcanvasEl = document.getElementById("offcanvasMenu");
-      const bsOffcanvas = window.bootstrap.Offcanvas.getInstance(offcanvasEl);
-      if (bsOffcanvas) {
-        bsOffcanvas.hide();
-      }
-      navigate(`/search?keyword=${encodeURIComponent(keyword)}`);
-      setSuggestions([]);
+ const handleSearch = (e) => {
+  e.preventDefault();
+  if (keyword.trim()) {
+    const offcanvasEl = document.getElementById("offcanvasMenu");
+    const bsOffcanvas = window.bootstrap?.Offcanvas?.getInstance?.(offcanvasEl);
+    if (bsOffcanvas) {
+      bsOffcanvas.hide();
     }
-  };
+    navigate(`/search?keyword=${encodeURIComponent(keyword)}`);
+    setSuggestions([]);
+  }
+};
 
   const handleChange = async (e) => {
     const value = e.target.value;
@@ -111,11 +111,12 @@ export default function Header() {
     }
   };
 
-  const handleCloseMenu = () => {
-    const offcanvasElement = document.getElementById("offcanvasMenu");
-    const bsOffcanvas = window.bootstrap.Offcanvas.getInstance(offcanvasElement);
-    if (bsOffcanvas) bsOffcanvas.hide();
-  };
+const handleCloseMenu = () => {
+  const offcanvasElement = document.getElementById("offcanvasMenu");
+  const bsOffcanvas = window.bootstrap?.Offcanvas?.getInstance?.(offcanvasElement);
+  if (bsOffcanvas) bsOffcanvas.hide();
+};
+
 
   return (
     <>
