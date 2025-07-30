@@ -1,13 +1,6 @@
-import emailjs from 'emailjs-com';
+import emailjs from '@emailjs/browser';
 
-/**
- * Gửi email sử dụng EmailJS
- * @param {Object} params
- * @param {string} params.templateId - Template ID của EmailJS
- * @param {string} params.userId - Public key (user ID) của EmailJS
- * @param {Object} params.templateParams - Các biến truyền vào template (ví dụ: { user_name, user_email, message })
- * @returns {Promise}
- */
-export function sendEmail({ templateId, userId, templateParams }) {
-    return emailjs.send('service_uemnj2h', templateId, templateParams, userId);
-} 
+export function sendEmail({ serviceId, templateId, templateParams, publicKey }) {
+    console.log("DEBUG:", { serviceId, templateId, templateParams, publicKey });
+  return emailjs.send(serviceId, templateId, templateParams, publicKey);
+}

@@ -1,11 +1,15 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import ApiService from "../services/api";
+import { sendEmail } from "../services/emailService";
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [notFound, setNotFound] = useState(false);
+  const [otp, setOtp] = useState("");
   const navigate = useNavigate();
+  const [status, setStatus] = useState("");
 
   const validateEmail = (email) => /^[\w.-]+@([\w-]+\.)+edu\.vn$/.test(email);
 
@@ -19,31 +23,35 @@ export default function ForgotPassword() {
     } else if (!validateEmail(email)) {
       setError("Email không đúng định dạng .edu.vn");
     } else {
-      // Giả lập kiểm tra email tồn tại
-      const exists = await mockCheckEmailExists(email);
-      if (!exists) {
+      const exists = await ApiService.checkEmailExists(email);
+      if (!exists.exists) {
         setNotFound(true);
         setError("Email không tồn tại trong hệ thống.");
       } else {
-        await fakeSendOTP(email); // Gửi OTP giả lập
+        await handleSendOtp(email);
         navigate("/enter-otp", { state: { email } });
       }
     }
   };
 
-  // Giả lập API gửi OTP
-  const fakeSendOTP = (email) => {
-    return new Promise((resolve) => setTimeout(resolve, 1000));
-  };
+  const handleSendOtp = async (email) => {
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
 
-  // Giả lập kiểm tra email tồn tại trong hệ thống
-  const mockCheckEmailExists = (email) => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const exists = email === "camloan@student.ctuet.edu.vn"; // chỉ email này hợp lệ
-        resolve(exists);
-      }, 500);
-    });
+    try {
+      await sendEmail({
+        serviceId: "service_iz7a11j", // Thay bằng ID bạn tạo ở EmailJS
+        templateId: "template_jchuvse", // Thay bằng template ID
+        publicKey: "jMVWFjbzNWko1v5d2", // Thay bằng public key trong dashboard
+        templateParams: {
+          email: email,
+          otp: otpCode
+        },
+      });
+      console.log("OTP đã được gửi tới email của bạn!");
+    } catch (error) {
+      console.error("Lỗi gửi email:", error);
+      console.log("Gửi OTP thất bại!");
+    }
   };
 
   return (

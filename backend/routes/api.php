@@ -86,5 +86,6 @@ Route::middleware('auth:sanctum')->group(function () {
 // Routes không cần authentication - không có middleware
 Route::get('/reviews_books', [BookController::class, 'index']);
 Route::get('/reviews_books/{id}', [BookController::class, 'show']);
+Route::get('/check-email-exists/{email}', [UserController::class, 'checkEmailExists']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [AuthController::class, 'register']);

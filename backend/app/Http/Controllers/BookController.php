@@ -20,10 +20,9 @@ class BookController extends Controller
             $query->where('title', 'like', "%$keyword%");
             // Nếu muốn tìm cả theo tác giả:
             // $query->orWhereHas('authors', function($q) use ($keyword) {
-            //     $q->where('name', 'like', \"%$keyword%\");
+            //     $q->where('name', 'like', "%$keyword%");
             // });
         }
-
         $books = $query->get();
 
         // Đổi tên key cho đúng format frontend nếu cần
@@ -47,6 +46,7 @@ class BookController extends Controller
                 'book_copies' => $book->availableBookCopies,
                 'views' => $book->views,
                 'image' => $book->image,
+                'borrowCount' => BorrowRecord::whereIn('id_bookcopy', $book->availableBookCopies->pluck('id'))->count(),
             ];
         });
 
@@ -56,7 +56,8 @@ class BookController extends Controller
     public function _index()
     {
         $books = Book::with(['authors:id,name', 'category:id,name', 'availableBookCopies'])->get();
-        
+        $borrowCount = BorrowRecord::where('id_book', $books->id)->count();
+
         // Đổi tên key cho đúng format frontend nếu cần
         $books = $books->map(function ($book) {
             return [
@@ -77,6 +78,7 @@ class BookController extends Controller
                 'views' => $book->views,
                 'book_copies' => $book->availableBookCopies,
                 'image' => $book->image,
+                'borrowCount' => $borrowCount,
             ];
         });
 

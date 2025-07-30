@@ -361,6 +361,15 @@ class ApiService {
             handleError(error);
         }
     }
+
+    static async checkEmailExists(email) {
+        try {
+            const response = await axios.get(`${API_BASE_URL}/check-email-exists/${email}`);
+            return handleResponse(response);
+        } catch (error) {
+            handleError(error);
+        }
+    }
 }
 
 export default ApiService; 

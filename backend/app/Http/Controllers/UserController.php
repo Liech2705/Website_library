@@ -85,4 +85,9 @@ class UserController extends Controller
         return response()->json(['success' => true]);
     }
 
+    public function checkEmailExists($email)
+    {
+        $user = User::where('email', $email)->first();
+        return response()->json(['exists' => $user !== null]);
+    }
 }

@@ -7,9 +7,12 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\BookCopy;
 use App\Models\Notification;
+use App\Traits\AdminActivityLogger;
 
 class BorrowRecordController extends Controller
 {
+    use AdminActivityLogger;
+
     public function index()
     {
         // Lấy tất cả borrow records cùng với user (độc giả) và bookCopy.book (sách)
@@ -113,6 +116,7 @@ class BorrowRecordController extends Controller
             'status' => 'pending'
         ]);
 
+        $this->logCreate('Phiếu mượn', ['user' => $borrowRecord->user->name, 'tên sách' => $borrowRecord->bookCopy->book->title]);
         return response()->json($borrowRecord, 201);
     }
 
