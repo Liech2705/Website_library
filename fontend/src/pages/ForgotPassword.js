@@ -7,9 +7,7 @@ export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
   const [notFound, setNotFound] = useState(false);
-  const [otp, setOtp] = useState("");
   const navigate = useNavigate();
-  const [status, setStatus] = useState("");
 
   const validateEmail = (email) => /^[\w.-]+@([\w-]+\.)+edu\.vn$/.test(email);
 
@@ -28,15 +26,19 @@ export default function ForgotPassword() {
         setNotFound(true);
         setError("Email không tồn tại trong hệ thống.");
       } else {
-        await handleSendOtp(email);
-        navigate("/enter-otp", { state: { email } });
+        const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+        const result = await handleSendOtp(email, otpCode);
+        if (result) {
+          navigate("/enter-otp", { state: { email, otp: otpCode } });
+        } else {
+          setError("Không thể gửi OTP. Vui lòng thử lại.");
+        }
       }
     }
   };
 
-  const handleSendOtp = async (email) => {
-    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-
+  const handleSendOtp = async (email, otpCode) => {
     try {
       await sendEmail({
         serviceId: "service_iz7a11j", // Thay bằng ID bạn tạo ở EmailJS
@@ -44,13 +46,14 @@ export default function ForgotPassword() {
         publicKey: "jMVWFjbzNWko1v5d2", // Thay bằng public key trong dashboard
         templateParams: {
           email: email,
-          otp: otpCode
+          otp: otpCode,
         },
       });
-      console.log("OTP đã được gửi tới email của bạn!");
+      console.log("OTP đã được gửi tới email:", email, "Mã:", otpCode);
+      return true;
     } catch (error) {
       console.error("Lỗi gửi email:", error);
-      console.log("Gửi OTP thất bại!");
+      return false;
     }
   };
 

@@ -51,8 +51,16 @@ export default function LoginForm() {
 
       navigate("/");
     } catch (err) {
-      setErrors({ general: err.message || "Thông tin đăng nhập không đúng." });
-    }
+  if (err.response?.status === 403 && err.response.data?.locked_until) {
+    const lockedUntil = new Date(err.response.data.locked_until).toLocaleString();
+    const lockReason = err.response.data.lock_reason;
+    setErrors({
+      general: `Tài khoản bị khóa đến ${lockedUntil}` + (lockReason ? `.\nLý do: ${lockReason}` : ""),
+    });
+  } else {
+    setErrors({ general: err.message || "Thông tin đăng nhập không đúng." });
+  }
+}
   };
 
   return (

@@ -1,21 +1,30 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import ApiService from "../services/api";
 
 export default function ResetPassword() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [errors, setErrors] = useState({});
   const [successMsg, setSuccessMsg] = useState("");
+  const [submitError, setSubmitError] = useState("");
+
   const location = useLocation();
   const navigate = useNavigate();
   const email = location.state?.email;
+
+  useEffect(() => {
+    if (!email) {
+      navigate("/forgot-password");
+    }
+  }, [email, navigate]);
 
   const validate = () => {
     const newErrors = {};
     if (!newPassword) {
       newErrors.newPassword = "Vui lòng nhập mật khẩu mới.";
     } else if (newPassword.length < 6) {
-      newErrors.newPassword = "Mật khẩu mới phải lớn hơn 6 ký tự.";
+      newErrors.newPassword = "Mật khẩu mới phải từ 6 ký tự trở lên.";
     }
 
     if (!confirmPassword) {
@@ -28,14 +37,20 @@ export default function ResetPassword() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setSuccessMsg("");
+    setSubmitError("");
 
     if (validate()) {
-      // Giả lập cập nhật thành công
-      setSuccessMsg("✅ Cập nhật mật khẩu thành công!");
-      setTimeout(() => navigate("/login"), 2000);
+      try {
+        await ApiService.resetPassword(email, newPassword);
+        setSuccessMsg("✅ Cập nhật mật khẩu thành công!");
+        setTimeout(() => navigate("/login"), 2000);
+      } catch (err) {
+        console.error("Lỗi khi đổi mật khẩu:", err);
+        setSubmitError("Đổi mật khẩu thất bại. Vui lòng thử lại sau.");
+      }
     }
   };
 
@@ -48,6 +63,7 @@ export default function ResetPassword() {
         </p>
 
         {successMsg && <div className="alert alert-success text-center">{successMsg}</div>}
+        {submitError && <div className="alert alert-danger text-center">{submitError}</div>}
 
         <form onSubmit={handleSubmit}>
           <div className="mb-3">

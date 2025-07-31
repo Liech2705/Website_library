@@ -7,8 +7,6 @@ import {
   Toast,
   Spinner,
   InputGroup,
-  Tabs,
-  Tab,
 } from "react-bootstrap";
 import { EyeFill, EyeSlashFill } from "react-bootstrap-icons";
 import AdminSidebarLayout from "../../components/AdminSidebar";
@@ -36,7 +34,13 @@ export default function UsersManagement() {
   const [showPassword, setShowPassword] = useState(false);
   const [selectedTab, setSelectedTab] = useState("active");
 
+  const [showLockReasonModal, setShowLockReasonModal] = useState(false);
+  const [lockReason, setLockReason] = useState("");
+  const [lockingUser, setLockingUser] = useState(null);
+
   const itemsPerPage = 10;
+
+  const currentUser = JSON.parse(localStorage.getItem("user"));
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -90,13 +94,13 @@ export default function UsersManagement() {
         setListUser(res);
         setToastMsg("Cập nhật người dùng thành công!");
       } else {
-      const created = await ApiServiceAdmin.addUser(formUser); 
-      if (created) {
-        const res = await ApiServiceAdmin.getUsers();
-        setListUser(res);
-        setToastMsg("Thêm người dùng thành công!");
-      }
+        const created = await ApiServiceAdmin.addUser(formUser);
+        if (created) {
+          const res = await ApiServiceAdmin.getUsers();
+          setListUser(res);
+          setToastMsg("Thêm người dùng thành công!");
         }
+      }
     } catch (error) {
       setToastMsg("Lỗi khi lưu người dùng!");
     }
@@ -126,32 +130,74 @@ export default function UsersManagement() {
   };
 
   const handleToggleLock = async (user) => {
+    const isLocked = isUserLocked(user);
+
+    if (currentUser && currentUser.id === user.id) {
+      setToastMsg("❌ Bạn không thể khóa chính mình!");
+      setShowToast(true);
+      return;
+    }
+
+    if (isLocked) {
+      try {
+        const updatedUser = { ...user, lock_until: null, lock_reason: "" };
+        await ApiServiceAdmin.updateUser(user.id, updatedUser);
+        const res = await ApiServiceAdmin.getUsers();
+        setListUser(res);
+        setToastMsg("Đã mở khóa tài khoản!");
+        setShowToast(true);
+      } catch {
+        setToastMsg("Lỗi khi mở khóa!");
+        setShowToast(true);
+      }
+    } else {
+      setLockingUser(user);
+      setShowLockReasonModal(true);
+    }
+  };
+
+  const confirmLockUser = async () => {
     try {
-      const isLocked = isUserLocked(user);
       const updatedUser = {
-        ...user,
-        lock_until: isLocked
-          ? null
-          : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        ...lockingUser,
+        lock_until: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+        lock_reason: lockReason,
       };
-      await ApiServiceAdmin.updateUser(user.id, updatedUser);
+      await ApiServiceAdmin.updateUser(lockingUser.id, updatedUser);
       const res = await ApiServiceAdmin.getUsers();
       setListUser(res);
-      setToastMsg(isLocked ? "Đã mở khóa tài khoản!" : "Đã khóa tài khoản!");
-      setShowToast(true);
-    } catch (err) {
-      setToastMsg("Lỗi khi cập nhật trạng thái!");
-      setShowToast(true);
+      setToastMsg("✅ Đã khóa tài khoản!");
+    } catch {
+      setToastMsg("❗ Lỗi khi khóa tài khoản!");
     }
+    setShowToast(true);
+    setShowLockReasonModal(false);
+    setLockingUser(null);
+    setLockReason("");
   };
 
   return (
     <AdminSidebarLayout>
       <div className="bg-white p-4 rounded shadow-sm">
+        {/* Tabs + Button */}
         <div className="d-flex justify-content-between align-items-center mb-3">
-          <h4 className="fw-bold">👤 Quản lý người dùng</h4>
+          <div>
+            {["active", "locked"].map((tab) => (
+              <Button
+                key={tab}
+                variant={selectedTab === tab ? "dark" : "outline-dark"}
+                className="me-2"
+                onClick={() => {
+                  setSelectedTab(tab);
+                  setCurrentPage(1);
+                }}
+              >
+                {tab === "active" ? "Tài khoản hoạt động" : "Tài khoản bị khóa"}
+              </Button>
+            ))}
+          </div>
           <Button
-            variant="primary"
+            variant="success"
             onClick={() => {
               setShowModal(true);
               setEditingUser(null);
@@ -167,19 +213,8 @@ export default function UsersManagement() {
           </Button>
         </div>
 
-         <Tabs
-          activeKey={selectedTab}
-          onSelect={(k) => {
-            setSelectedTab(k);
-            setCurrentPage(1);
-          }}
-          className="mb-3"
-        >
-          <Tab eventKey="active" title="Tài khoản đang hoạt động" />
-          <Tab eventKey="locked" title="Tài khoản bị khóa" />
-        </Tabs>
-
-        <div className="d-flex justify-content-between align-items-center mb-3">
+        {/* Search */}
+        <div className="mb-3">
           <input
             type="text"
             placeholder="🔍 Tìm theo tên người dùng..."
@@ -192,13 +227,14 @@ export default function UsersManagement() {
           />
         </div>
 
+        {/* Table */}
         {loading ? (
           <div className="text-center my-5">
             <Spinner animation="border" variant="primary" />
           </div>
         ) : (
           <div className="scrollable-table-wrapper">
-            <Table striped bordered hover responsive className="mt-3">
+            <Table striped bordered hover className="mt-3">
               <thead className="table-dark">
                 <tr>
                   <th>#</th>
@@ -224,13 +260,12 @@ export default function UsersManagement() {
                       <td>{infor.phone || "—"}</td>
                       <td>{infor.address || "—"}</td>
                       <td>
-                        <span
-                          className={`badge ${
-                            isLocked ? "bg-secondary" : "bg-success"
-                          }`}
-                        >
+                        <span className={`badge ${isLocked ? "bg-secondary" : "bg-success"}`}>
                           {isLocked ? "Bị khóa" : "Đang hoạt động"}
                         </span>
+                        {isLocked && user.lock_reason && (
+                          <div className="text-muted small mt-1">Lý do: {user.lock_reason}</div>
+                        )}
                       </td>
                       <td>
                         <Button
@@ -249,6 +284,7 @@ export default function UsersManagement() {
           </div>
         )}
 
+        {/* Pagination */}
         {totalPages > 1 && (
           <div className="mt-3 d-flex justify-content-center">
             <Pagination
@@ -259,11 +295,10 @@ export default function UsersManagement() {
           </div>
         )}
 
+        {/* Modal Thêm/Sửa User */}
         <Modal show={showModal} onHide={() => setShowModal(false)} centered>
           <Modal.Header closeButton>
-            <Modal.Title>
-              {editingUser ? "✏️ Sửa người dùng" : "👤 Thêm người dùng"}
-            </Modal.Title>
+            <Modal.Title>{editingUser ? "✏️ Sửa người dùng" : "👤 Thêm người dùng"}</Modal.Title>
           </Modal.Header>
           <Modal.Body>
             <Form>
@@ -271,9 +306,7 @@ export default function UsersManagement() {
                 <Form.Label>Họ tên</Form.Label>
                 <Form.Control
                   value={formUser.name}
-                  onChange={(e) =>
-                    setFormUser({ ...formUser, name: e.target.value })
-                  }
+                  onChange={(e) => setFormUser({ ...formUser, name: e.target.value })}
                 />
               </Form.Group>
               <Form.Group className="mb-2">
@@ -281,9 +314,7 @@ export default function UsersManagement() {
                 <Form.Control
                   type="email"
                   value={formUser.email}
-                  onChange={(e) =>
-                    setFormUser({ ...formUser, email: e.target.value })
-                  }
+                  onChange={(e) => setFormUser({ ...formUser, email: e.target.value })}
                 />
               </Form.Group>
               {!editingUser && (
@@ -354,6 +385,31 @@ export default function UsersManagement() {
           </Modal.Footer>
         </Modal>
 
+        {/* Modal lý do khóa */}
+        <Modal show={showLockReasonModal} onHide={() => setShowLockReasonModal(false)} centered>
+          <Modal.Header closeButton>
+            <Modal.Title>🔒 Nhập lý do khóa tài khoản</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            <Form.Control
+              as="textarea"
+              rows={3}
+              value={lockReason}
+              onChange={(e) => setLockReason(e.target.value)}
+              placeholder="Nhập lý do..."
+            />
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setShowLockReasonModal(false)}>
+              Hủy
+            </Button>
+            <Button variant="danger" onClick={confirmLockUser}>
+              Xác nhận khóa
+            </Button>
+          </Modal.Footer>
+        </Modal>
+
+        {/* Toast */}
         <Toast
           show={showToast}
           onClose={() => setShowToast(false)}

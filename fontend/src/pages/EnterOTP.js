@@ -1,14 +1,24 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { sendEmail } from "../services/emailService";
 
 export default function EnterOTP() {
   const [otp, setOtp] = useState("");
   const [error, setError] = useState("");
   const [timeLeft, setTimeLeft] = useState(60);
   const [resending, setResending] = useState(false);
+
   const location = useLocation();
   const navigate = useNavigate();
-  const email = location.state?.email;
+
+  // Lấy email và OTP từ ForgotPassword truyền sang
+  const { email, otp: expectedOtp } = location.state || {};
+
+  useEffect(() => {
+    if (!email || !expectedOtp) {
+      navigate("/forgot-password");
+    }
+  }, [email, expectedOtp, navigate]);
 
   useEffect(() => {
     if (timeLeft <= 0) return;
@@ -22,35 +32,51 @@ export default function EnterOTP() {
 
     if (!otp.trim()) {
       setError("Vui lòng nhập mã OTP.");
-    } else if (otp !== "123456") {
-      setError("Mã OTP không chính xác!");
     } else if (timeLeft <= 0) {
       setError("Mã OTP đã hết hạn. Vui lòng thử lại.");
+    } else if (otp !== expectedOtp) {
+      setError("Mã OTP không chính xác!");
     } else {
+      // Mã đúng → chuyển sang đặt lại mật khẩu
       navigate("/reset-password", { state: { email } });
     }
   };
 
-  const fakeSendOTP = (email) => {
-    return new Promise((resolve) => {
-      console.log("Gửi OTP mới đến:", email);
-      setTimeout(resolve, 1000);
-    });
-  };
-
   const handleResend = async () => {
+    const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
     setResending(true);
     setError("");
     setOtp("");
-    await fakeSendOTP(email);
-    setTimeLeft(60);
-    setResending(false);
+
+    try {
+      await sendEmail({
+        serviceId: "service_iz7a11j",
+        templateId: "template_jchuvse",
+        publicKey: "jMVWFjbzNWko1v5d2",
+        templateParams: {
+          email: email,
+          otp: newOtp,
+        },
+      });
+
+      // Cập nhật expectedOtp mới vào location.state
+      location.state.otp = newOtp;
+      console.log("OTP mới đã gửi:", newOtp);
+
+      setTimeLeft(60);
+    } catch (error) {
+      console.error("Lỗi gửi lại OTP:", error);
+      setError("Không thể gửi lại mã OTP. Vui lòng thử lại.");
+    } finally {
+      setResending(false);
+    }
   };
 
   return (
     <div className="container-fluid min-vh-100 d-flex align-items-center justify-content-center bg-light">
       <div className="bg-white shadow rounded p-5" style={{ maxWidth: "500px", width: "100%" }}>
         <h3 className="text-center text-danger mb-4">Xác minh mã OTP</h3>
+
         <p className="text-center text-muted mb-3">
           Mã xác minh đã được gửi đến email <strong>{email}</strong>.
         </p>

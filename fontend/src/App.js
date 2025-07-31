@@ -54,7 +54,7 @@ function AppContent() {
     "/admin/bookmanagement", "/admin/usermanagement",
     "/admin/bookmanagement/category", "/admin/bookmanagement/author",
     "/admin/bookmanagement/publisher", "/admin/borrowManagement",
-    "/admin/statisticsreport", "/admin/history", "/enter-otp"
+    "/admin/statisticsreport", "/admin/history", "/enter-otp", "/reset-password"
   ];
   const hideLayout = hideLayoutRoutes.includes(location.pathname) ||
     (
