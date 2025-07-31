@@ -52,6 +52,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Các thao tác thêm/sửa/xóa chỉ cho admin
     Route::middleware('adminonly')->group(function () {
         Route::apiResource('users', UserController::class)->only(['store', 'update', 'destroy']);
+
         Route::apiResource('user-infors', UserInforController::class)->only(['store', 'update', 'destroy']);
         Route::apiResource('books', BookController::class)->only(['store', 'update', 'destroy']);
         Route::apiResource('authors', AuthorController::class)->only(['store', 'update', 'destroy']);
@@ -89,3 +90,4 @@ Route::get('/reviews_books/{id}', [BookController::class, 'show']);
 Route::get('/check-email-exists/{email}', [UserController::class, 'checkEmailExists']);
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [AuthController::class, 'register']);
+Route::post('/users/reset-password', [UserController::class, 'resetPassword']);

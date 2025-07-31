@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import ApiService from "../services/api";
+import ApiServiceAdmin from "../services/admin/api";
 
 export default function ResetPassword() {
   const [newPassword, setNewPassword] = useState("");
@@ -44,7 +44,7 @@ export default function ResetPassword() {
 
     if (validate()) {
       try {
-        await ApiService.resetPassword(email, newPassword);
+        await ApiServiceAdmin.resetPassword(email, newPassword);
         setSuccessMsg("✅ Cập nhật mật khẩu thành công!");
         setTimeout(() => navigate("/login"), 2000);
       } catch (err) {

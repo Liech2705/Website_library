@@ -26,6 +26,7 @@ class UserController extends Controller
                 'role' => $user->role,
                 'status' => $user->status,
                 'lock_until' => $user->lock_until,
+                'lock_reason' => $user->lock_reason,
                 'id_infor' => $user->infor?->id,
                 'infor' => $user->infor ? [
                     'phone' => $user->infor->phone,
@@ -79,6 +80,19 @@ class UserController extends Controller
             return response()->json(['error' => 'Mật khẩu hiện tại không đúng.'], 422);
         }
 
+        $user->password = Hash::make($request->newPassword);
+        $user->save();
+
+        return response()->json(['success' => true]);
+    }
+
+    public function resetPassword(Request $request)
+    {
+        $request->validate([
+            'email' => 'required|email',
+        ]);
+
+        $user = User::where('email', $request->email)->first();
         $user->password = Hash::make($request->newPassword);
         $user->save();
 

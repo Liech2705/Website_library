@@ -61,11 +61,13 @@ export default function ProfilePage() {
     }
     try {
       await ApiService.updateUserProfile({
+        name: user.name,
         phone: user.phone,
         address: user.address,
         school_name: user.school_name,
       });
       setSuccess("✅ Cập nhật thông tin thành công!");
+      localStorage.setItem('username', user.name);
       setErrors({});
     } catch (err) {
       setErrors({ general: err.message || "Cập nhật thất bại." });
@@ -200,8 +202,8 @@ export default function ProfilePage() {
                           user.status === "active"
                             ? "Hoạt động"
                             : user.status === "locked"
-                            ? "Bị khóa"
-                            : user.status
+                              ? "Bị khóa"
+                              : user.status
                         }
                         disabled
                       />
@@ -222,7 +224,7 @@ export default function ProfilePage() {
             </div>
           </div>
         </div>
-      </div> 
+      </div>
     </div>
   );
 }

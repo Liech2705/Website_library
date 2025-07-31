@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\User_infor;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
@@ -79,6 +80,11 @@ class UserInforController extends Controller
             'address' => 'nullable|string|max:255',
             'school_name' => 'nullable|string|max:255',
         ]);
+
+        $name = $request->validate([
+            'name' => 'nullable|string|max:255',
+        ]);
+
         $userInfor = User_infor::where('user_id', $user->id)->first();
         if (!$userInfor) {
             // Nếu chưa có thì tạo mới
@@ -87,6 +93,11 @@ class UserInforController extends Controller
         } else {
             $userInfor->update($data);
         }
+
+        $user = User::where('id', $user->id)->first();
+        $user->name = $name['name'];
+        $user->save();
+
         return response()->json(['message' => 'Cập nhật thông tin thành công!', 'user_infor' => $userInfor]);
     }
 

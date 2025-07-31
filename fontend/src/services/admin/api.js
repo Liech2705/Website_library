@@ -380,6 +380,17 @@ class ApiServiceAdmin {
             handleError(error);
         }
     }
+
+    static async resetPassword(email, newPassword) {
+        try {
+            const response = await axios.post(`${API_BASE_URL}/users/reset-password`, { email, newPassword }, {
+                headers: getAuthHeaders(),
+            });
+            return handleResponse(response);
+        } catch (error) {
+            handleError(error);
+        }
+    }
 }
 
 export default ApiServiceAdmin;
