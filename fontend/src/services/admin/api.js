@@ -391,6 +391,28 @@ class ApiServiceAdmin {
             handleError(error);
         }
     }
+
+    static async renewApprove(id) {
+        try {
+            const response = await axios.post(`${API_BASE_URL}/borrow-records/${id}/approve`, {}, {
+                headers: getAuthHeaders(),
+            });
+            return handleResponse(response);
+        } catch (error) {
+            handleError(error);
+        }
+    }
+
+    static async renewReject(id, note) {
+        try {
+            const response = await axios.post(`${API_BASE_URL}/borrow-records/${id}/reject`, { note }, {
+                headers: getAuthHeaders(),
+            });
+            return handleResponse(response);
+        } catch (error) {
+            handleError(error);
+        }
+    }
 }
 
 export default ApiServiceAdmin;

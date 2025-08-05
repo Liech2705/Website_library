@@ -13,7 +13,7 @@ class BookController extends Controller
 
     public function index(Request $request)
     {
-        $query = Book::with(['authors:id,name', 'category:id,name', 'availableBookCopies']);
+        $query = Book::with(['authors:id,name,bio', 'category:id,name', 'availableBookCopies']);
 
         if ($request->has('search')) {
             $keyword = $request->input('search');
@@ -34,6 +34,7 @@ class BookController extends Controller
                     return [
                         'id' => $author->id,
                         'name' => $author->name,
+                        'bio' => $author->bio,
                     ];
                 }),
                 'category' => [
@@ -53,38 +54,6 @@ class BookController extends Controller
         return response()->json($books);
     }
 
-    public function _index()
-    {
-        $books = Book::with(['authors:id,name', 'category:id,name', 'availableBookCopies'])->get();
-        $borrowCount = BorrowRecord::where('id_book', $books->id)->count();
-
-        // Đổi tên key cho đúng format frontend nếu cần
-        $books = $books->map(function ($book) {
-            return [
-                'id' => $book->id,
-                'title' => $book->title,
-                'authors' => $book->authors->map(function ($author) {
-                    return [
-                        'id' => $author->id,
-                        'name' => $author->name,
-                    ];
-                }),
-                'category' => [
-                    'id' => $book->category->id,
-                    'name' => $book->category->name,
-                ],
-                'publisher' => $book->publisher,
-                'year' => $book->year,
-                'views' => $book->views,
-                'book_copies' => $book->availableBookCopies,
-                'image' => $book->image,
-                'borrowCount' => $borrowCount,
-            ];
-        });
-
-        return response()->json($books);
-    }
-
     public function store(Request $request)
     {
         $book = Book::create($request->all());
@@ -95,7 +64,7 @@ class BookController extends Controller
     public function show($id)
     {
         //return Book::findOrFail($id);
-        $book = Book::with(['authors:id,name', 'category:id,name', 'availableBookCopies'])->findOrFail($id);
+        $book = Book::with(['authors:id,name,bio', 'category:id,name', 'availableBookCopies'])->findOrFail($id);
 
         // Format the response to match frontend expectations
         return response()->json([
@@ -105,6 +74,7 @@ class BookController extends Controller
                 return [
                     'id' => $author->id,
                     'name' => $author->name,
+                    'bio' => $author->bio,
                 ];
             }),
             'category' => $book->category ? [

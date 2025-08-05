@@ -153,6 +153,8 @@ class BorrowRecordController extends Controller
                     'due_time' => $record->due_time,
                     'end_time' => $record->end_time,
                     'is_return' => $record->is_return,
+                    'is_extended_request' => $record->is_extended_request,
+                    'is_extended_approved' => $record->is_extended_approved,
                     'renew_count' => $record->renew_count,
                     'note' => $record->note,
                     'status' => $record->is_return
@@ -164,17 +166,14 @@ class BorrowRecordController extends Controller
         return response()->json($records);
     }
 
-    /**
-     * Gia hạn sách
-     */
-    public function renew(Request $request, $id)
+    public function renew(Request $request)
     {
         $userId = Auth::id();
 
-        // Tìm bản ghi mượn sách
-        $borrowRecord = BorrowRecord::where('id', $id)
-            ->where('user_id', $userId)
+        $borrowRecord = BorrowRecord::where('user_id', $userId)
+            ->where('id_bookcopy', $request->id_bookcopy)
             ->where('is_return', false)
+            ->where('is_extended_request', false)
             ->first();
 
         if (!$borrowRecord) {
@@ -183,30 +182,68 @@ class BorrowRecordController extends Controller
             ], 404);
         }
 
-        // Kiểm tra số lần gia hạn
         if ($borrowRecord->renew_count >= 2) {
             return response()->json([
                 'message' => 'Bạn đã sử dụng hết số lần gia hạn (tối đa 2 lần).'
             ], 403);
         }
-
+           
         // Kiểm tra xem có quá hạn không
         if (now()->greaterThan($borrowRecord->due_time)) {
             return response()->json([
-                'message' => 'Không thể gia hạn sách đã quá hạn. Vui lòng trả sách.'
+                'message' => 'Không thể gia hạn sách đã quá hạn. Vui lòng trả sách trước khi gia hạn.'
             ], 403);
         }
 
-        // Thực hiện gia hạn
         $borrowRecord->update([
-            'renew_count' => $borrowRecord->renew_count + 1,
-            'due_time' => $borrowRecord->due_time->addDays(7), // Gia hạn thêm 7 ngày
+            'is_extended_request' => true,
         ]);
 
         return response()->json([
-            'message' => 'Gia hạn sách thành công.',
+            'message' => 'Gia hạn sách thành công. Vui lòng chờ phê duyệt.',
             'new_due_date' => $borrowRecord->due_time,
             'renew_count' => $borrowRecord->renew_count,
+
+        ], 200);
+    }
+
+    public function approveRenew(Request $request, $id)
+    {
+        $borrowRecord = BorrowRecord::findOrFail($id);
+        $borrowRecord->update([
+            'is_extended_approved' => 'approved',
+            'due_time' => $borrowRecord->due_time->addDays(7),
+        ]);
+
+        $notification = Notification::create([
+            'user_id' => $borrowRecord->user_id,
+            'title' => 'Phê duyệt gia hạn sách',
+            'message' => 'Phiếu mượn sách của bạn đã được phê duyệt. Vui lòng đến thư viện để nhận sách.',
+            'type' => 'success',
+        ]);
+
+        return response()->json([
+            'message' => 'Phê duyệt gia hạn sách thành công.',
+        ], 200);
+    }
+
+    public function rejectRenew(Request $request, $id)
+    {
+        $borrowRecord = BorrowRecord::findOrFail($id);
+        $borrowRecord->update([
+            'is_extended_approved' => 'rejected',
+            'note' => $request->note,
+        ]);
+
+        $notification = Notification::create([
+            'user_id' => $borrowRecord->user_id,
+            'title' => 'Từ chối gia hạn sách',
+            'message' => 'Phiếu mượn sách của bạn đã bị từ chối. Lý do: ' . $request->note,
+            'type' => 'warning',
+        ]);
+        
+        return response()->json([
+            'message' => 'Từ chối gia hạn sách thành công.',
         ], 200);
     }
 

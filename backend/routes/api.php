@@ -76,6 +76,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/dashboard/new-books', [DashboardController::class, 'newBooks']);
         Route::get('/dashboard/new-readers', [DashboardController::class, 'newReaders']);
         Route::get('/statistics/books', [BookController::class, 'statistics']);
+        Route::post('/borrow-records/{id}/renew', [BorrowRecordController::class, 'renew']);
+        Route::post('/borrow-records/{id}/approve', [BorrowRecordController::class, 'approveRenew']);
+        Route::post('/borrow-records/{id}/reject', [BorrowRecordController::class, 'rejectRenew']);
         
         // Routes cho admin quản lý đặt trước sách
         Route::post('/reservations/{id}/notify', [ReservationController::class, 'notifyBookAvailable']);

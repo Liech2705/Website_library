@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import ApiService from "../services/api";
 import ToastMessage from "../components/ToastMessage";
 import ActionModal from "../components/ActionModal";
+import Tooltip from "../components/Tooltip";
 
 export default function BookDetail() {
   const { id } = useParams();
@@ -151,7 +152,11 @@ export default function BookDetail() {
           <h2 className="fw-bold text-primary mb-3">{book.title}</h2>
           <ul className="list-unstyled text-muted fs-6">
             <li><strong>Mã sách:</strong> {book.id}</li>
-            <li><strong>Tác giả:</strong> <span className="text-success">{authors}</span></li>
+            <li><strong>Tác giả:</strong>
+              <Tooltip content={book.authors.map(a => a.bio).join(", ") || "Không có thông tin chi tiết"}>
+                <span className="text-success cursor-pointer">{authors}</span>
+              </Tooltip>
+            </li>
             <li><strong>Thể loại:</strong> {category}</li>
             <li><strong>NXB:</strong> {book.publisher || "?"}</li>
             <li><strong>Năm:</strong> {book.year || "?"}</li>
@@ -205,44 +210,46 @@ export default function BookDetail() {
       </div>
 
       {/* Sách gợi ý */}
-      {relatedBooks.length > 0 && (
-        <div className="mt-5">
-          <h5 className="text-muted mb-3">📘 Gợi ý sách cùng thể loại / tác giả</h5>
-          <div className="row">
-            {relatedBooks.map(rb => {
-              const img = rb.image_url?.startsWith("http")
-                ? rb.image
-                : rb.image;
+      {
+        relatedBooks.length > 0 && (
+          <div className="mt-5">
+            <h5 className="text-muted mb-3">📘 Gợi ý sách cùng thể loại / tác giả</h5>
+            <div className="row">
+              {relatedBooks.map(rb => {
+                const img = rb.image_url?.startsWith("http")
+                  ? rb.image
+                  : rb.image;
 
-              return (
-                <div key={rb.id} className="col-md-4 mb-4">
-                  <div className="card h-100 shadow-sm">
-                    <img
-                      src={img || "https://via.placeholder.com/300x400?text=No+Image"}
-                      className="card-img-top"
-                      alt={rb.title}
-                      style={{ height: "280px", objectFit: "cover" }}
-                    />
-                    <div className="card-body">
-                      <h6 className="card-title text-primary">{rb.title}</h6>
-                      <p className="card-text text-muted" style={{ fontSize: "0.9rem" }}>
-                        {rb.authors?.map(a => a.name).join(", ") || "Không rõ tác giả"}
-                      </p>
-                      <Link to={`/book/${rb.id}`} className="btn btn-sm btn-outline-dark">
-                        Xem chi tiết
-                      </Link>
+                return (
+                  <div key={rb.id} className="col-md-4 mb-4">
+                    <div className="card h-100 shadow-sm">
+                      <img
+                        src={img || "https://via.placeholder.com/300x400?text=No+Image"}
+                        className="card-img-top"
+                        alt={rb.title}
+                        style={{ height: "280px", objectFit: "cover" }}
+                      />
+                      <div className="card-body">
+                        <h6 className="card-title text-primary">{rb.title}</h6>
+                        <p className="card-text text-muted" style={{ fontSize: "0.9rem" }}>
+                          {rb.authors?.map(a => a.name).join(", ") || "Không rõ tác giả"}
+                        </p>
+                        <Link to={`/book/${rb.id}`} className="btn btn-sm btn-outline-dark">
+                          Xem chi tiết
+                        </Link>
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
-        </div>
-      )}
+        )
+      }
 
       <div className="mt-4">
         <Link to="/" className="btn btn-outline-dark">← Quay lại danh sách</Link>
       </div>
-    </div>
+    </div >
   );
 }
