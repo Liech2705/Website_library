@@ -416,7 +416,7 @@ class ApiServiceAdmin {
 
     static async renewReject(id, note) {
         try {
-            const response = await axios.post(`${API_BASE_URL}/borrow-records/${id}/reject`, { note }, {
+            const response = await axios.post(`${API_BASE_URL}/borrow-records/${id}/rejectRenew`, { note }, {
                 headers: getAuthHeaders(),
             });
             return handleResponse(response);

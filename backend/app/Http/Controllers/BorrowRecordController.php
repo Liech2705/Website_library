@@ -216,12 +216,13 @@ class BorrowRecordController extends Controller
         $borrowRecord->update([
             'is_extended_approved' => 'approved',
             'due_time' => $borrowRecord->due_time->addDays(7),
+            'renew_count' => $borrowRecord->renew_count + 1,
         ]);
 
         $notification = Notification::create([
             'user_id' => $borrowRecord->user_id,
             'title' => 'Phê duyệt gia hạn sách',
-            'message' => 'Phiếu mượn sách của bạn đã được phê duyệt. Vui lòng đến thư viện để nhận sách.',
+            'message' => 'Phiếu gia hạn mượn sách của bạn đã được phê duyệt.',
             'type' => 'success',
         ]);
 

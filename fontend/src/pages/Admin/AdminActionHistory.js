@@ -42,6 +42,35 @@ export default function AdminActionHistory() {
 
   const handlePageChange = (page) => setCurrentPage(page);
 
+  function renderDescription(desc) {
+    if (!desc) return "";
+    // Nếu có JSON ở cuối chuỗi, tách và parse
+    const match = desc.match(/^(.*?)-\s*(\{.*\})$/);
+    if (match) {
+      const prefix = match[1].trim();
+      try {
+        const obj = JSON.parse(match[2]);
+        let detail = [];
+        if (obj.user) detail.push(`Người dùng: ${obj.user}`);
+        if (obj["tên sách"]) detail.push(`Sách: ${obj["tên sách"]}`);
+        // Thêm các trường khác nếu cần
+        return `${prefix} - ${detail.join(" | ")}`;
+      } catch {
+        // Nếu JSON lỗi, trả về nguyên bản
+        return desc;
+      }
+    }
+    return desc;
+  }
+
+  function formatDate(dateStr) {
+    if (!dateStr) return "";
+    const d = new Date(dateStr);
+    if (isNaN(d)) return dateStr;
+    const pad = (n) => n.toString().padStart(2, '0');
+    return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  }
+
   return (
     <AdminSidebarLayout>
       <div className="bg-white p-4 rounded shadow-sm">
@@ -73,8 +102,8 @@ export default function AdminActionHistory() {
               {currentLogs.map((log) => (
                 <tr key={log.id}>
                   <td>{log.id}</td>
-                  <td>{log.description}</td>
-                  <td>{log.created_at}</td>
+                  <td>{renderDescription(log.description || log["nội dung thao tác"] || log["tên sách"] || "")}</td>
+                  <td>{formatDate(log.created_at || log["thời gian"] || "")}</td>
                 </tr>
               ))}
             </tbody>

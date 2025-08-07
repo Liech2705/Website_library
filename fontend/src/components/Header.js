@@ -84,18 +84,18 @@ export default function Header() {
     navigate("/");
   };
 
- const handleSearch = (e) => {
-  e.preventDefault();
-  if (keyword.trim()) {
-    const offcanvasEl = document.getElementById("offcanvasMenu");
-    const bsOffcanvas = window.bootstrap?.Offcanvas?.getInstance?.(offcanvasEl);
-    if (bsOffcanvas) {
-      bsOffcanvas.hide();
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (keyword.trim()) {
+      const offcanvasEl = document.getElementById("offcanvasMenu");
+      const bsOffcanvas = window.bootstrap?.Offcanvas?.getInstance?.(offcanvasEl);
+      if (bsOffcanvas) {
+        bsOffcanvas.hide();
+      }
+      navigate(`/search?keyword=${encodeURIComponent(keyword)}`);
+      setSuggestions([]);
     }
-    navigate(`/search?keyword=${encodeURIComponent(keyword)}`);
-    setSuggestions([]);
-  }
-};
+  };
 
   const handleChange = async (e) => {
     const value = e.target.value;
@@ -111,11 +111,11 @@ export default function Header() {
     }
   };
 
-const handleCloseMenu = () => {
-  const offcanvasElement = document.getElementById("offcanvasMenu");
-  const bsOffcanvas = window.bootstrap?.Offcanvas?.getInstance?.(offcanvasElement);
-  if (bsOffcanvas) bsOffcanvas.hide();
-};
+  const handleCloseMenu = () => {
+    const offcanvasElement = document.getElementById("offcanvasMenu");
+    const bsOffcanvas = window.bootstrap?.Offcanvas?.getInstance?.(offcanvasElement);
+    if (bsOffcanvas) bsOffcanvas.hide();
+  };
 
 
   return (
@@ -131,7 +131,7 @@ const handleCloseMenu = () => {
         <div className="container-fluid">
           <Link to="/" className="navbar-brand d-flex align-items-center">
             <img
-           src="https://media.istockphoto.com/id/1202911884/vi/vec-to/logo-s%C3%A1ch-v%C4%83n-h%E1%BB%8Dc-gi%C3%A1o-d%E1%BB%A5c-th%C6%B0-vi%E1%BB%87n-ki%E1%BA%BFn-th%E1%BB%A9c-%C4%91%E1%BB%8Dc-trang-nghi%C3%AAn-c%E1%BB%A9u-gi%E1%BA%A5y-vector-h%E1%BB%8Dc-tr%C6%B0%E1%BB%9Dng.jpg?s=170667a&w=0&k=20&c=kfffsGCfUSLINQSvjA3PNfxflPmimOYnTP-s1Orkmpc="
+              src="https://media.istockphoto.com/id/1202911884/vi/vec-to/logo-s%C3%A1ch-v%C4%83n-h%E1%BB%8Dc-gi%C3%A1o-d%E1%BB%A5c-th%C6%B0-vi%E1%BB%87n-ki%E1%BA%BFn-th%E1%BB%A9c-%C4%91%E1%BB%8Dc-trang-nghi%C3%AAn-c%E1%BB%A9u-gi%E1%BA%A5y-vector-h%E1%BB%8Dc-tr%C6%B0%E1%BB%9Dng.jpg?s=170667a&w=0&k=20&c=kfffsGCfUSLINQSvjA3PNfxflPmimOYnTP-s1Orkmpc="
               alt="Logo"
               width="50"
               height="50"
@@ -155,11 +155,6 @@ const handleCloseMenu = () => {
               <li className="nav-item">
                 <Link to="/books" className="nav-link">
                   Kho Sách
-                </Link>
-              </li>
-              <li className="nav-item">
-                <Link to="/categories" className="nav-link">
-                  Danh Mục
                 </Link>
               </li>
             </ul>

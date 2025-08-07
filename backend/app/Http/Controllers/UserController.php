@@ -50,6 +50,18 @@ class UserController extends Controller
             'infor.phone' => 'required|string|max:255',
             'infor.address' => 'required|string|max:255',
             'infor.school_name' => 'required|string|max:255',
+        ], [
+            'name.required' => 'Vui lòng nhập tên người dùng.',
+            'email.required' => 'Vui lòng nhập email.',
+            'email.email' => 'Email không đúng định dạng.',
+            'email.unique' => 'Email đã tồn tại.',
+            'password.required' => 'Vui lòng nhập mật khẩu.',
+            'password.min' => 'Mật khẩu phải có ít nhất 8 ký tự.',
+            'infor.required' => 'Vui lòng nhập thông tin cá nhân.',
+            'infor.array' => 'Thông tin cá nhân không hợp lệ.',
+            'infor.phone.required' => 'Vui lòng nhập số điện thoại.',
+            'infor.address.required' => 'Vui lòng nhập địa chỉ.',
+            'infor.school_name.required' => 'Vui lòng nhập tên trường.',
         ]);
 
         $user = User::create([

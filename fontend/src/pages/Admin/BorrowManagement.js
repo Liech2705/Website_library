@@ -142,8 +142,8 @@ export default function BorrowManagement() {
   const filteredByTab = borrowRecords.filter((r) => r.status === selectedTab);
   const filteredRecords = filteredByTab.filter(
     (r) =>
-      r.reader.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      r.bookTitle.toLowerCase().includes(searchTerm.toLowerCase())
+      (r.reader || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (r.bookTitle || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const totalPages = Math.ceil(filteredRecords.length / itemsPerPage);
