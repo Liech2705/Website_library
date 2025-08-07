@@ -180,15 +180,20 @@ class ApiService {
     }
 
     static async renewBorrowRecord(borrowRecordId) {
-        try {
-            const response = await axios.post(`${API_BASE_URL}/borrow-records/${borrowRecordId}/renew`, {
-                headers: getAuthHeaders(),
-            });
-            return handleResponse(response);
-        } catch (error) {
-            handleError(error);
+            try {
+                const response = await axios.post(
+                    `${API_BASE_URL}/borrow-records/${borrowRecordId}/renew`,
+                    {}, 
+                    {
+                        headers: getAuthHeaders(), 
+                    }
+                );
+                return handleResponse(response);
+            } catch (error) {
+                handleError(error);
+            }
         }
-    }
+
 
     static async returnBook(id) {
         try {

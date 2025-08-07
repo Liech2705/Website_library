@@ -212,45 +212,46 @@ export default function BorrowHistory() {
                 <th>Hành động</th>
               </tr>
             </thead>
-            <tbody>
-              {currentRecords.map((record, index) => (
-                <tr key={record.id}>
-                  <td>{indexOfFirstRecord + index + 1}</td>
-                  <td>{record.title}</td>
-                  <td>{formatDate(record.start_time)}</td>
-                  <td>{formatDate(record.due_time)}</td>
-                  <td>{formatDate(record.end_time)}</td>
-                  <td>
-                    <span
-                      className={`badge ${record.status === "pending"
-                          ? "bg-secondary"
-                          : renewRequests[record.id] === "pending"
-                            ? "bg-info text-dark"
-                            : record.end_time
+                <tbody>
+                  {currentRecords.map((record, index) => (
+                    <tr key={record.id}>
+                      <td>{indexOfFirstRecord + index + 1}</td>
+                      <td>{record.title}</td>
+                      <td>{formatDate(record.start_time)}</td>
+                      <td>{formatDate(record.due_time)}</td>
+                      <td>{formatDate(record.end_time)}</td>
+                      <td>
+                        <span
+                          className={`badge ${record.status === "pending"
+                              ? "bg-secondary"
+                              : renewRequests[record.id] === "pending"
+                              ? "bg-info text-dark"
+                              : record.end_time
                               ? "bg-success"
                               : "bg-warning text-dark"
-                        }`}
-                    >
-                      {getStatus(record)}
-                    </span>
-                  </td>
-                  <td>
-                    {!record.is_return &&
-                      record.status === "borrowed" &&
-                      !renewRequests[record.id] &&
-                      isNearDue(record.due_time) && (
-                        <button
-                          className="btn btn-sm btn-outline-primary"
-                          onClick={() => handleRenewClick(record)}
+                            }`}
                         >
-                          Gia hạn
-                        </button>
-                      )}
+                          {getStatus(record)}
+                        </span>
+                      </td>
+                      <td>
+                        {!record.is_return &&
+                          record.status === "borrowed" &&
+                          !renewRequests[record.id] &&
+                          !record.is_extended_request && 
+                          isNearDue(record.due_time) && (
+                            <button
+                              className="btn btn-sm btn-outline-primary"
+                              onClick={() => handleRenewClick(record)}
+                            >
+                              Gia hạn
+                            </button>
+                          )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
 
-                  </td>
-                </tr>
-              ))}
-            </tbody>
           </table>
 
           {totalPages > 1 && (
