@@ -38,8 +38,8 @@ export default function BorrowManagement() {
   const showToast = (message, variant = "info") => {
     try {
       const audio = new Audio(notificationSound);
-      audio.play().catch(() => {}); // phòng lỗi trình duyệt chặn âm thanh
-    } catch {}
+      audio.play().catch(() => { }); // phòng lỗi trình duyệt chặn âm thanh
+    } catch { }
     setToast({ show: true, message, variant });
   };
 
@@ -206,8 +206,8 @@ export default function BorrowManagement() {
                   {tab === "pending"
                     ? "Phiếu chờ duyệt"
                     : tab === "borrowed"
-                    ? "Phiếu đang mượn"
-                    : "Phiếu đã trả"}
+                      ? "Phiếu đang mượn"
+                      : "Phiếu đã trả"}
                 </Button>
               ))}
             </div>
@@ -281,7 +281,7 @@ export default function BorrowManagement() {
                         </>
                       ) : selectedTab === "borrowed" ? (
                         <>
-                          {r.is_extended_request === 1 && r.is_extended_approved === "pending" && (
+                          {r.is_extended_request === true && r.is_extended_approved === "pending" && (
                             <Button
                               size="sm"
                               variant="outline-warning"

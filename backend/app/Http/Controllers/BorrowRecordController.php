@@ -35,6 +35,9 @@ class BorrowRecordController extends Controller
                 'status' => $r->is_return 
                 ? 'returned' 
                 : ($r->bookCopy->status === 'pending' ? 'pending' : 'borrowed'), // Thêm dòng này
+                'is_extended_request' => $r->is_extended_request,
+                'is_extended_approved' => $r->is_extended_approved,
+                'renew_count' => $r->renew_count,
             ];
         });
     
@@ -171,7 +174,7 @@ class BorrowRecordController extends Controller
         $userId = Auth::id();
 
         $borrowRecord = BorrowRecord::where('user_id', $userId)
-            ->where('id_bookcopy', $request->id_bookcopy)
+            // ->where('id_bookcopy', $request->id_bookcopy)
             ->where('is_return', false)
             ->where('is_extended_request', false)
             ->first();
