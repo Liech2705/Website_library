@@ -102,7 +102,7 @@ export default function UsersManagement() {
         }
       }
     } catch (error) {
-      setToastMsg("Lỗi khi lưu người dùng!");
+      setToastMsg(`Lỗi ${error.message} !`);
     }
     setShowModal(false);
     setShowToast(true);

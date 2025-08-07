@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use App\Traits\AdminActivityLogger;
+use App\Models\User_infor;
 
 
 class UserController extends Controller
@@ -41,7 +42,28 @@ class UserController extends Controller
 
     public function store(Request $request)
     {
-        $user = User::create($request->all());
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|string|min:8',
+            'infor' => 'required|array',
+            'infor.phone' => 'required|string|max:255',
+            'infor.address' => 'required|string|max:255',
+            'infor.school_name' => 'required|string|max:255',
+        ]);
+
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => Hash::make($request->password),
+        ]);
+        $userInfor = User_infor::create([
+            'user_id' => $user->id,
+            'phone' => $request->infor['phone'],
+            'address' => $request->infor['address'],
+            'school_name' => $request->infor['school_name'],
+        ]);
+
         $this->logCreate('Người dùng', ['name' => $user->name, 'id' => $user->id]);
         return response()->json($user, 201);
     }

@@ -348,6 +348,17 @@ class ApiServiceAdmin {
         }
     }
 
+    static async addUser(data) {
+        try {
+            const response = await axios.post(`${API_BASE_URL}/users`, data, {
+                headers: getAuthHeaders(),
+            });
+            return handleResponse(response);
+        } catch (error) {
+            handleError(error);
+        }
+    }
+
     static async getAdminActivities() {
         try {
             const response = await axios.get(`${API_BASE_URL}/admin-activities`, {
