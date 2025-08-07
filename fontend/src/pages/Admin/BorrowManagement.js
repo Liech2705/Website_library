@@ -92,7 +92,7 @@ export default function BorrowManagement() {
 
   const handleExtendBorrow = async (id) => {
     try {
-      await ApiServiceAdmin.approveExtendBorrow(id);
+      await ApiServiceAdmin.renewApprove(id);
       const res = await ApiServiceAdmin.getBorrowRecords();
       setBorrowRecords(res);
       showToast("✅ Gia hạn phiếu mượn thành công!", "success");

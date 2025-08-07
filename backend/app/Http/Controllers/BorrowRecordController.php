@@ -210,7 +210,7 @@ class BorrowRecordController extends Controller
         ], 200);
     }
 
-    public function approveRenew(Request $request, $id)
+    public function approveRenew($id)
     {
         $borrowRecord = BorrowRecord::findOrFail($id);
         $borrowRecord->update([
@@ -230,7 +230,7 @@ class BorrowRecordController extends Controller
         ], 200);
     }
 
-    public function rejectRenew(Request $request, $id)
+    public function rejectRenew($id)
     {
         $borrowRecord = BorrowRecord::findOrFail($id);
         $borrowRecord->update([
